@@ -29,7 +29,7 @@ const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
           }`} />
           <span className={`text-sm ${
             activeTab === 'hr' ? 'text-blue-600 font-medium' : 'text-gray-400'
-          }`}>HR</span>
+          }`}>消息</span>
         </button>
         <button 
           onClick={() => handleTabChange('dataEyes')}
@@ -45,7 +45,7 @@ const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
           }`} />
           <span className={`text-sm ${
             activeTab === 'dataEyes' ? 'text-blue-600 font-medium' : 'text-gray-400'
-          }`}>dataEyes</span>
+          }`}>BI</span>
         </button>
       </div>
 
