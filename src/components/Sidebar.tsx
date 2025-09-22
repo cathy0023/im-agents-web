@@ -1,4 +1,5 @@
 import { MessageCircle, BarChart3 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 interface SidebarProps {
   activeTab: 'hr' | 'dataEyes';
@@ -15,38 +16,22 @@ const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
     <div className="w-36 bg-white border-r border-gray-200 flex flex-col h-full">
       {/* 左侧功能导航 */}
       <div className="p-3 flex flex-col space-y-4 mt-4">
-        <button 
+        <Button 
+          variant={activeTab === 'hr' ? 'secondary' : 'ghost'}
           onClick={() => handleTabChange('hr')}
-          className={`w-full flex items-center space-x-2 p-3 rounded-lg transition-colors cursor-pointer ${
-            activeTab === 'hr' 
-              ? 'bg-blue-50 hover:bg-blue-100' 
-              : 'hover:bg-gray-50'
-          }`}
-          style={{ minHeight: '44px' }}
+          className="w-full justify-start space-x-2 h-11"
         >
-          <MessageCircle className={`h-5 w-5 ${
-            activeTab === 'hr' ? 'text-blue-600' : 'text-gray-400'
-          }`} />
-          <span className={`text-sm ${
-            activeTab === 'hr' ? 'text-blue-600 font-medium' : 'text-gray-400'
-          }`}>消息</span>
-        </button>
-        <button 
+          <MessageCircle className="h-5 w-5" />
+          <span className="text-sm">消息</span>
+        </Button>
+        <Button 
+          variant={activeTab === 'dataEyes' ? 'secondary' : 'ghost'}
           onClick={() => handleTabChange('dataEyes')}
-          className={`w-full flex items-center space-x-2 p-3 rounded-lg transition-colors cursor-pointer ${
-            activeTab === 'dataEyes' 
-              ? 'bg-blue-50 hover:bg-blue-100' 
-              : 'hover:bg-gray-50'
-          }`}
-          style={{ minHeight: '44px' }}
+          className="w-full justify-start space-x-2 h-11"
         >
-          <BarChart3 className={`h-5 w-5 ${
-            activeTab === 'dataEyes' ? 'text-blue-600' : 'text-gray-400'
-          }`} />
-          <span className={`text-sm ${
-            activeTab === 'dataEyes' ? 'text-blue-600 font-medium' : 'text-gray-400'
-          }`}>BI</span>
-        </button>
+          <BarChart3 className="h-5 w-5" />
+          <span className="text-sm">BI</span>
+        </Button>
       </div>
 
     </div>
