@@ -11,7 +11,7 @@ const Header = () => {
       
       {/* 中间标题区域 */}
       <div className="flex-1 flex items-center justify-center">
-        <h1 className="text-lg font-semibold text-gray-900">IM智能代理</h1>
+        <h1 className="text-lg font-semibold text-gray-900"></h1>
       </div>
       
       {/* 右侧操作按钮 */}
