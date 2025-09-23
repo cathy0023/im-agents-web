@@ -1,0 +1,374 @@
+---
+globs: src/lib/api.ts,src/lib/sse.ts,src/lib/**/*.ts
+---
+
+# API 开发规范
+
+## 🌐 API 架构原则
+
+### 集中化 API 管理
+参考 [src/lib/api.ts](mdc:src/lib/api.ts) 的实现模式：
+- 所有 API 调用集中在 `src/lib/` 目录
+- 使用统一的错误处理
+- 实现类型安全的接口
+
+### API 模块结构
+```typescript
+// ✅ API 模块组织
+export const chatApi = {
+  sendMessage: async (message: string, agentId: number) => {},
+  getHistory: async (agentId: number) => {},
+  clearHistory: async (agentId: number) => {}
+}
+
+export const userApi = {
+  getProfile: async () => {},
+  updateProfile: async (data: UpdateProfileData) => {}
+}
+```
+
+## 📡 HTTP 客户端规范
+
+### 使用 axios 进行请求
+```typescript
+// ✅ 统一的 axios 配置
+import axios from 'axios'
+
+const apiClient = axios.create({
+  baseURL: process.env.VITE_API_BASE_URL || '/api',
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json'
+  }
+})
+
+// ✅ 请求拦截器
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = getAuthToken()
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  }
+)
+
+// ✅ 响应拦截器
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    handleApiError(error)
+    return Promise.reject(error)
+  }
+)
+```
+
+## 🔐 认证和授权
+
+### API Key 管理
+参考项目中的实现：
+```typescript
+// ✅ 安全的 API Key 处理
+const getApiKey = (): string | null => {
+  return useChatStore.getState().apiKey
+}
+
+const setAuthHeader = (apiKey: string) => {
+  apiClient.defaults.headers.common['Authorization'] = `Bearer ${apiKey}`
+}
+
+// ✅ 检查 API Key 有效性
+const validateApiKey = async (apiKey: string): Promise<boolean> => {
+  try {
+    await apiClient.get('/validate', {
+      headers: { Authorization: `Bearer ${apiKey}` }
+    })
+    return true
+  } catch {
+    return false
+  }
+}
+```
+
+## 🔄 Server-Sent Events (SSE)
+
+### SSE 实现规范
+参考 [src/lib/sse.ts](mdc:src/lib/sse.ts)：
+```typescript
+// ✅ SSE 连接管理
+class SSEConnection {
+  private eventSource: EventSource | null = null
+  
+  connect(url: string, options: SSEOptions) {
+    this.eventSource = new EventSource(url)
+    
+    this.eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data)
+        this.handleMessage(data)
+      } catch (error) {
+        console.error('Failed to parse SSE message:', error)
+      }
+    }
+    
+    this.eventSource.onerror = (error) => {
+      this.handleError(error)
+    }
+  }
+  
+  disconnect() {
+    if (this.eventSource) {
+      this.eventSource.close()
+      this.eventSource = null
+    }
+  }
+}
+```
+
+### 流式响应处理
+```typescript
+// ✅ 处理流式数据
+const handleStreamMessage = (message: StreamMessage) => {
+  switch (message.type) {
+    case 'content':
+      updateMessageContent(message.data)
+      break
+    case 'finished':
+      markMessageComplete(message.messageId)
+      break
+    case 'error':
+      handleStreamError(message.error)
+      break
+  }
+}
+```
+
+## 📝 类型定义规范
+
+### API 响应类型
+```typescript
+// ✅ 标准响应格式
+interface ApiResponse<T = any> {
+  data: T
+  success: boolean
+  message?: string
+  error?: string
+  timestamp: string
+}
+
+// ✅ 分页响应
+interface PaginatedResponse<T> extends ApiResponse<T[]> {
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+  }
+}
+
+// ✅ 错误响应
+interface ApiError {
+  code: string
+  message: string
+  details?: Record<string, any>
+  statusCode: number
+}
+```
+
+### 请求参数类型
+```typescript
+// ✅ 请求参数接口
+interface SendMessageRequest {
+  message: string
+  agentId: number
+  conversationId?: string
+  stream?: boolean
+}
+
+interface GetHistoryRequest {
+  agentId: number
+  page?: number
+  limit?: number
+  startDate?: string
+  endDate?: string
+}
+```
+
+## ⚡ 错误处理
+
+### 统一错误处理
+```typescript
+// ✅ 错误处理函数
+const handleApiError = (error: unknown): ApiError => {
+  if (axios.isAxiosError(error)) {
+    const response = error.response
+    
+    if (response) {
+      return {
+        code: response.data?.code || 'HTTP_ERROR',
+        message: response.data?.message || error.message,
+        statusCode: response.status,
+        details: response.data?.details
+      }
+    }
+    
+    return {
+      code: 'NETWORK_ERROR',
+      message: 'Network connection failed',
+      statusCode: 0
+    }
+  }
+  
+  return {
+    code: 'UNKNOWN_ERROR',
+    message: error instanceof Error ? error.message : 'Unknown error',
+    statusCode: 0
+  }
+}
+
+// ✅ 在组件中使用
+const sendMessage = async (content: string) => {
+  try {
+    const response = await chatApi.sendMessage(content, selectedAgent)
+    // 处理成功响应
+  } catch (error) {
+    const apiError = handleApiError(error)
+    console.error('Failed to send message:', apiError)
+    
+    // 用户友好的错误提示
+    if (apiError.code === 'UNAUTHORIZED') {
+      showError('请检查您的 API Key 设置')
+    } else {
+      showError('发送消息失败，请重试')
+    }
+  }
+}
+```
+
+## 🔄 重试和降级策略
+
+### 自动重试机制
+```typescript
+// ✅ 重试配置
+const retryConfig = {
+  retries: 3,
+  retryDelay: 1000,
+  retryCondition: (error: AxiosError) => {
+    // 只对网络错误和 5xx 错误重试
+    return !error.response || error.response.status >= 500
+  }
+}
+
+// ✅ 实现重试逻辑
+const withRetry = async <T>(
+  apiCall: () => Promise<T>,
+  config = retryConfig
+): Promise<T> => {
+  let lastError: Error
+  
+  for (let attempt = 0; attempt <= config.retries; attempt++) {
+    try {
+      return await apiCall()
+    } catch (error) {
+      lastError = error as Error
+      
+      if (attempt === config.retries) break
+      if (!config.retryCondition(error as AxiosError)) break
+      
+      await delay(config.retryDelay * Math.pow(2, attempt))
+    }
+  }
+  
+  throw lastError
+}
+```
+
+## 🚀 性能优化
+
+### 请求去重
+```typescript
+// ✅ 防止重复请求
+const pendingRequests = new Map<string, Promise<any>>()
+
+const deduplicateRequest = <T>(
+  key: string,
+  requestFn: () => Promise<T>
+): Promise<T> => {
+  if (pendingRequests.has(key)) {
+    return pendingRequests.get(key)!
+  }
+  
+  const promise = requestFn().finally(() => {
+    pendingRequests.delete(key)
+  })
+  
+  pendingRequests.set(key, promise)
+  return promise
+}
+```
+
+### 请求缓存
+```typescript
+// ✅ 简单缓存实现
+const cache = new Map<string, { data: any; timestamp: number }>()
+const CACHE_DURATION = 5 * 60 * 1000 // 5分钟
+
+const withCache = async <T>(
+  key: string,
+  requestFn: () => Promise<T>,
+  duration = CACHE_DURATION
+): Promise<T> => {
+  const cached = cache.get(key)
+  
+  if (cached && Date.now() - cached.timestamp < duration) {
+    return cached.data
+  }
+  
+  const data = await requestFn()
+  cache.set(key, { data, timestamp: Date.now() })
+  
+  return data
+}
+```
+
+## 📊 监控和日志
+
+### API 调用监控
+```typescript
+// ✅ 请求日志
+const logApiCall = (config: AxiosRequestConfig, duration: number) => {
+  console.log(`[API] ${config.method?.toUpperCase()} ${config.url} - ${duration}ms`)
+}
+
+// ✅ 性能监控
+apiClient.interceptors.request.use((config) => {
+  config.metadata = { startTime: Date.now() }
+  return config
+})
+
+apiClient.interceptors.response.use(
+  (response) => {
+    const duration = Date.now() - response.config.metadata.startTime
+    logApiCall(response.config, duration)
+    return response
+  }
+)
+```
+
+## ✅ API 开发检查清单
+
+### 开发前检查
+- [ ] API 接口是否已定义类型？
+- [ ] 错误处理策略是否明确？
+- [ ] 是否需要认证？
+
+### 开发中检查
+- [ ] 是否使用了统一的错误处理？
+- [ ] 是否正确处理了异步操作？
+- [ ] 是否考虑了重试和降级？
+
+### 测试检查
+- [ ] 正常情况下是否工作正常？
+- [ ] 网络错误时是否正确处理？
+- [ ] 认证失败时是否有合适的提示？
+- [ ] 性能是否满足要求？

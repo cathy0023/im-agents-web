@@ -1,0 +1,64 @@
+---
+alwaysApply: true
+---
+
+# IM Agents Web 项目核心规则
+
+## 🎯 项目技术栈
+这是一个基于 **React + TypeScript + Vite + Tailwind CSS + shadcn UI + zustand + axios** 的现代化 Web 应用。
+
+## 📦 项目结构
+- 主入口: [src/main.tsx](mdc:src/main.tsx)
+- 应用根组件: [src/App.tsx](mdc:src/App.tsx)
+- 主要配置文件:
+  - [package.json](mdc:package.json) - 项目依赖和脚本
+  - [components.json](mdc:components.json) - shadcn UI 配置
+  - [tsconfig.json](mdc:tsconfig.json) - TypeScript 配置
+  - [vite.config.ts](mdc:vite.config.ts) - Vite 构建配置
+
+## 🗂️ 目录结构规范
+```
+src/
+├── components/
+│   ├── ui/              # shadcn UI 组件 (最高优先级)
+│   ├── [业务组件].tsx   # 业务逻辑组件
+├── lib/
+│   ├── utils.ts         # 工具函数
+│   ├── api.ts          # API 接口
+│   └── sse.ts          # Server-Sent Events
+├── store/              # zustand 状态管理
+├── types/              # TypeScript 类型定义
+└── assets/             # 静态资源
+```
+
+## 🎨 **CRITICAL: shadcn UI 组件优先级**
+**必须优先使用 shadcn UI 组件，这是项目的核心要求！**
+
+1. **第一选择**: 使用现有的 shadcn UI 组件 
+   - 参考: [src/components/ui/](mdc:src/components/ui/)
+   - 如 [Button](mdc:src/components/ui/button.tsx), [Card](mdc:src/components/ui/card.tsx), [Input](mdc:src/components/ui/input.tsx)
+
+2. **第二选择**: 通过 **MCP shadcn 方式**（优先）搜索和添加新的 shadcn 组件
+   - AI 自动使用 MCP 工具搜索、查看和获取组件
+   - 获取完整的使用示例和最佳实践
+   - 自动生成正确的安装命令
+
+3. **第三选择**: 通过 `npx shadcn@latest add [component]` 直接添加组件
+
+4. **最后选择**: 仅在 shadcn 无法满足需求时才创建自定义组件
+
+## 🔄 状态管理
+使用 zustand 进行状态管理，参考 [src/store/chatStore.ts](mdc:src/store/chatStore.ts)
+
+## 🌐 API 接口
+统一在 [src/lib/api.ts](mdc:src/lib/api.ts) 中管理 API 调用
+
+## 📝 类型定义
+所有 TypeScript 类型定义集中在 [src/types/](mdc:src/types/) 目录下
+
+## ✅ 开发原则
+- 严格使用 TypeScript
+- 优先使用 shadcn UI 组件
+- 使用 Tailwind CSS 进行样式设计
+- 遵循组件化开发模式
+- 保持代码的类型安全

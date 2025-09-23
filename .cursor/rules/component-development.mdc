@@ -1,0 +1,237 @@
+---
+globs: *.tsx,src/components/**/*.tsx
+---
+
+# React 组件开发规则
+
+## 🎨 **CRITICAL: shadcn UI 组件优先原则**
+
+### ✅ 正确的组件开发流程
+1. **首先检查是否有现有的 shadcn 组件**
+   ```typescript
+   // ✅ 优先使用现有的 shadcn 组件
+   import { Button } from "@/components/ui/button"
+   import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+   import { Input } from "@/components/ui/input"
+   ```
+
+2. **如果没有，使用 MCP 搜索和添加 shadcn 组件（优先方式）**
+   ```bash
+   # 🎯 使用 MCP 搜索组件
+   # AI 会自动使用 mcp_shadcn_search_items_in_registries 搜索
+   # AI 会使用 mcp_shadcn_view_items_in_registries 查看组件详情
+   # AI 会使用 mcp_shadcn_get_add_command_for_items 获取添加命令
+   ```
+
+3. **备选方式：直接使用 npx 命令**
+   ```bash
+   npx shadcn@latest add [component-name]
+   ```
+
+4. **组合使用现有组件创建复杂UI**
+   ```typescript
+   // ✅ 组合 shadcn 组件
+   const CustomDialog = () => (
+     <Dialog>
+       <DialogTrigger asChild>
+         <Button variant="outline">打开弹窗</Button>
+       </DialogTrigger>
+       <DialogContent>
+         <Card>
+           <CardHeader>
+             <CardTitle>标题</CardTitle>
+           </CardHeader>
+           <CardContent>内容</CardContent>
+         </Card>
+       </DialogContent>
+     </Dialog>
+   )
+   ```
+
+### ❌ 禁止的做法
+```typescript
+// ❌ 禁止：不要使用原生HTML元素代替shadcn组件
+<button className="bg-blue-500 hover:bg-blue-700">Click me</button>
+
+// ❌ 禁止：不要重复创建已有的组件功能
+const CustomButton = () => <div className="button-styles">...</div>
+```
+
+## 🎯 MCP shadcn 使用指南
+
+### MCP 组件发现流程
+```typescript
+// ✅ 当需要新组件时，AI 会自动：
+// 1. 使用 mcp_shadcn_search_items_in_registries 搜索相关组件
+// 2. 使用 mcp_shadcn_view_items_in_registries 查看组件详情
+// 3. 使用 mcp_shadcn_get_item_examples_from_registries 获取使用示例
+// 4. 使用 mcp_shadcn_get_add_command_for_items 获取安装命令
+```
+
+### MCP 组件搜索示例
+```typescript
+// 🔍 搜索按钮相关组件
+// AI 会搜索: 'button', 'btn', 'action' 等关键词
+
+// 🔍 搜索表单相关组件  
+// AI 会搜索: 'form', 'input', 'select', 'checkbox' 等
+
+// 🔍 搜索布局组件
+// AI 会搜索: 'card', 'dialog', 'sheet', 'container' 等
+```
+
+### MCP 示例获取
+```typescript
+// ✅ AI 会自动获取组件使用示例
+// 示例模式: 'button-demo', 'card-example', 'form-demo' 等
+// 这些示例包含完整的实现代码和最佳实践
+```
+
+## 📋 组件开发模板
+
+### 标准组件结构
+```typescript
+import React, { forwardRef } from 'react'
+import { cn } from '@/lib/utils'
+
+// shadcn UI 组件导入
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+
+// 类型定义
+interface MyComponentProps {
+  className?: string
+  children?: React.ReactNode
+  // 其他props...
+}
+
+// 使用 forwardRef 支持 ref 传递
+const MyComponent = forwardRef<HTMLDivElement, MyComponentProps>(
+  ({ className, children, ...props }, ref) => {
+    return (
+      <div
+        ref={ref}
+        className={cn("base-styles", className)}
+        {...props}
+      >
+        {children}
+      </div>
+    )
+  }
+)
+
+MyComponent.displayName = "MyComponent"
+
+export { MyComponent }
+```
+
+## 🔄 组件状态管理
+
+### 使用 zustand store
+```typescript
+// ✅ 正确：选择性订阅状态
+import { useChatStore } from '@/store/chatStore'
+
+const MyComponent = () => {
+  const { messages, addMessage } = useChatStore()
+  // 只订阅需要的状态片段
+}
+```
+
+### 本地状态管理
+```typescript
+// ✅ 合理使用 useState 处理本地状态
+const [isOpen, setIsOpen] = useState(false)
+const [inputValue, setInputValue] = useState('')
+```
+
+## 🎨 样式规范
+
+### Tailwind CSS 使用
+```typescript
+// ✅ 使用 Tailwind 类名
+<div className="flex items-center justify-between p-4 bg-white border rounded-lg">
+
+// ✅ 使用 cn 工具函数合并条件样式
+<div className={cn(
+  "base-classes",
+  isActive && "active-classes",
+  disabled && "disabled-classes"
+)}>
+
+// ✅ 响应式设计
+<div className="w-full md:w-1/2 lg:w-1/3">
+```
+
+## 📝 TypeScript 最佳实践
+
+### Props 接口定义
+```typescript
+// ✅ 明确的 Props 类型
+interface ComponentProps {
+  title: string
+  isVisible?: boolean
+  onClose?: () => void
+  className?: string
+  children?: React.ReactNode
+}
+```
+
+### 事件处理
+```typescript
+// ✅ 正确的事件类型
+const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+  event.preventDefault()
+  // 处理逻辑
+}
+
+const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  setValue(event.target.value)
+}
+```
+
+## 🔧 性能优化
+
+### React.memo 使用
+```typescript
+// ✅ 对纯展示组件使用 memo
+const ChatMessage = React.memo<ChatMessageProps>(({ message }) => {
+  return <div>{message.content}</div>
+})
+```
+
+### useCallback 和 useMemo
+```typescript
+// ✅ 优化回调函数
+const handleSubmit = useCallback((data: FormData) => {
+  // 处理提交
+}, [dependency])
+
+// ✅ 优化昂贵计算
+const filteredData = useMemo(() => 
+  data.filter(item => item.isActive),
+  [data]
+)
+```
+
+## 📦 导入顺序规范
+```typescript
+// 1. React 相关
+import React, { useState, useEffect } from 'react'
+
+// 2. 第三方库
+import { clsx } from 'clsx'
+
+// 3. shadcn UI 组件
+import { Button } from '@/components/ui/button'
+
+// 4. 本地组件
+import CustomComponent from './CustomComponent'
+
+// 5. 工具和类型
+import { cn } from '@/lib/utils'
+import { MyType } from '@/types'
+
+// 6. Store
+import { useStore } from '@/store'
+```

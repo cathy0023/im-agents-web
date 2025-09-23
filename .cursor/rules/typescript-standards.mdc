@@ -1,0 +1,281 @@
+---
+globs: *.ts,*.tsx
+---
+
+# TypeScript 开发标准
+
+## 🎯 类型安全原则
+
+### ✅ 严格类型检查
+```typescript
+// ✅ 明确的类型定义
+interface User {
+  id: string
+  name: string
+  email: string
+  role: 'admin' | 'user'
+}
+
+// ✅ 函数参数和返回值类型
+const getUserById = async (id: string): Promise<User | null> => {
+  // 实现
+}
+
+// ✅ 泛型使用
+interface ApiResponse<T> {
+  data: T
+  success: boolean
+  message?: string
+}
+```
+
+### ❌ 禁止的做法
+```typescript
+// ❌ 禁止使用 any
+const data: any = await response.json()
+
+// ❌ 禁止忽略 TypeScript 错误
+// @ts-ignore
+const result = unsafeOperation()
+
+// ❌ 禁止未定义的类型
+const user = {} as User // 不安全的类型断言
+```
+
+## 📋 类型定义规范
+
+### 集中类型管理
+参考项目结构 [src/types/](mdc:src/types/):
+- [src/types/chat.ts](mdc:src/types/chat.ts) - 聊天相关类型
+- 将相关类型放在同一个文件中
+- 使用 `export` 导出所有类型
+
+### Interface vs Type
+```typescript
+// ✅ 优先使用 interface（可扩展）
+interface ChatMessage {
+  id: string
+  content: string
+  role: 'user' | 'assistant'
+  timestamp: Date
+}
+
+// ✅ 复杂类型使用 type
+type ChatState = {
+  messages: ChatMessage[]
+  isLoading: boolean
+} & BaseState
+
+// ✅ 联合类型使用 type
+type MessageRole = 'user' | 'assistant' | 'system'
+```
+
+## 🔧 工具类型使用
+
+### 常用工具类型
+```typescript
+// ✅ Partial 用于可选属性
+const updateUser = (id: string, updates: Partial<User>) => {
+  // 实现
+}
+
+// ✅ Pick 选择特定属性
+type UserSummary = Pick<User, 'id' | 'name'>
+
+// ✅ Omit 排除特定属性
+type CreateUserRequest = Omit<User, 'id'>
+
+// ✅ Record 创建映射类型
+type UserRoles = Record<string, 'admin' | 'user'>
+```
+
+## 🎨 React + TypeScript 最佳实践
+
+### 组件 Props 定义
+```typescript
+// ✅ 完整的 Props 接口
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: 'primary' | 'secondary' | 'outline'
+  size?: 'sm' | 'md' | 'lg'
+  isLoading?: boolean
+  children: React.ReactNode
+}
+
+// ✅ 可选 children
+interface CardProps {
+  title: string
+  children?: React.ReactNode
+  className?: string
+}
+```
+
+### 事件处理类型
+```typescript
+// ✅ 正确的事件类型
+const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  event.preventDefault()
+  // 处理表单提交
+}
+
+const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  setValue(event.target.value)
+}
+
+const handleButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+  // 处理按钮点击
+}
+```
+
+### Ref 类型
+```typescript
+// ✅ forwardRef 类型
+const MyComponent = forwardRef<HTMLDivElement, MyComponentProps>(
+  (props, ref) => {
+    return <div ref={ref} {...props} />
+  }
+)
+
+// ✅ useRef 类型
+const inputRef = useRef<HTMLInputElement>(null)
+const divRef = useRef<HTMLDivElement>(null)
+```
+
+## 🔄 状态管理类型
+
+### zustand Store 类型
+参考 [src/store/chatStore.ts](mdc:src/store/chatStore.ts):
+```typescript
+// ✅ Store 状态接口
+interface ChatState {
+  // 状态
+  messages: Message[]
+  isLoading: boolean
+  apiKey: string | null
+  
+  // 动作 (明确参数和返回类型)
+  addMessage: (message: Message) => void
+  setLoading: (loading: boolean) => void
+  clearMessages: () => void
+}
+
+// ✅ 使用类型安全的 create
+const useChatStore = create<ChatState>((set, get) => ({
+  // 实现
+}))
+```
+
+## 🌐 API 类型定义
+
+### API 响应类型
+参考 [src/lib/api.ts](mdc:src/lib/api.ts):
+```typescript
+// ✅ API 响应接口
+interface ApiResponse<T = any> {
+  data: T
+  success: boolean
+  message?: string
+  error?: string
+}
+
+// ✅ 具体的API类型
+interface SendMessageResponse {
+  messageId: string
+  content: string
+  timestamp: string
+}
+
+// ✅ 错误处理类型
+interface ApiError {
+  code: string
+  message: string
+  details?: Record<string, any>
+}
+```
+
+### API 函数类型
+```typescript
+// ✅ 明确的函数签名
+const sendMessage = async (
+  message: string,
+  agentId: number
+): Promise<ApiResponse<SendMessageResponse>> => {
+  // 实现
+}
+
+// ✅ 错误处理
+const handleApiError = (error: unknown): ApiError => {
+  if (error instanceof Error) {
+    return { code: 'UNKNOWN_ERROR', message: error.message }
+  }
+  return { code: 'UNEXPECTED_ERROR', message: 'An unexpected error occurred' }
+}
+```
+
+## 🔍 类型缩窄和守卫
+
+### 类型守卫
+```typescript
+// ✅ 用户定义的类型守卫
+const isMessage = (value: unknown): value is Message => {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'id' in value &&
+    'content' in value &&
+    'role' in value
+  )
+}
+
+// ✅ 使用类型守卫
+if (isMessage(data)) {
+  // data 现在是 Message 类型
+  console.log(data.content)
+}
+```
+
+### 可选链和空值合并
+```typescript
+// ✅ 安全的属性访问
+const userName = user?.profile?.name ?? 'Unknown'
+
+// ✅ 数组安全访问
+const firstMessage = messages?.[0]?.content
+```
+
+## 📝 注释和文档
+
+### JSDoc 注释
+```typescript
+/**
+ * 发送消息到指定的AI助手
+ * @param message - 要发送的消息内容
+ * @param agentId - 目标助手ID
+ * @returns Promise 包含响应数据
+ * @throws {ApiError} 当API调用失败时
+ */
+const sendMessage = async (
+  message: string, 
+  agentId: number
+): Promise<ApiResponse<SendMessageResponse>> => {
+  // 实现
+}
+```
+
+## ⚡ 性能相关类型
+
+### 回调函数类型优化
+```typescript
+// ✅ useCallback 类型
+const handleSubmit = useCallback(
+  (data: FormData) => {
+    // 处理逻辑
+  },
+  [dependency]
+)
+
+// ✅ useMemo 类型
+const expensiveValue = useMemo(
+  (): ComputedType => computeExpensiveValue(data),
+  [data]
+)
+```

@@ -1,6 +1,6 @@
-import { Send, BarChart3, Brain, TrendingUp, FileText } from 'lucide-react'
+import { BarChart3, Brain, TrendingUp, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
+import MessageInput from './MessageInput'
 
 interface FooterBarProps {
   mode?: 'hr' | 'dataEyes';
@@ -71,16 +71,7 @@ const FooterBar = ({
             </div>
           )}
           
-          <div className="flex items-end space-x-3">
-            <Textarea
-              rows={3}
-              placeholder={placeholder}
-              className="flex-1 resize-none"
-            />
-            <Button size="icon" className="px-4 py-3">
-              <Send className="h-5 w-5" />
-            </Button>
-          </div>
+          <MessageInput placeholder={placeholder} />
         </div>
       )}
 

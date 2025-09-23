@@ -3,8 +3,8 @@ import { Card } from '@/components/ui/card'
 
 const ChartArea = () => {
   return (
-    <div className="h-full bg-gray-50 p-4 border-l border-gray-200">
-      <div className="h-full flex flex-col space-y-4 overflow-y-auto">
+    <div className="h-full bg-gray-50 p-4 border-l border-gray-200 overflow-y-auto">
+      <div className="min-h-full flex flex-col space-y-4 pb-6">
         <h3 className="text-lg font-semibold text-gray-900">数据分析</h3>
         
         {/* 统计卡片 */}
