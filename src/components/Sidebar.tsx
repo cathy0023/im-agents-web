@@ -13,27 +13,35 @@ const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
   }
 
   return (
-    <div className="w-36 bg-white border-r border-gray-200 flex flex-col h-full">
-      {/* 左侧功能导航 */}
-      <div className="p-3 flex flex-col space-y-4 mt-4">
+    <div className="w-24 bg-white border-r border-gray-200 flex flex-col h-full">
+      {/* 功能导航 */}
+      <div className="p-3 flex flex-col space-y-1">
         <Button 
-          variant={activeTab === 'hr' ? 'secondary' : 'ghost'}
+          variant="outline"
           onClick={() => handleTabChange('hr')}
-          className="w-full justify-start space-x-2 h-11"
+          className={`w-full h-14 flex flex-col items-center justify-center py-2 px-1 text-xs rounded-lg transition-colors border-0 ${
+            activeTab === 'hr' 
+              ? 'bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-600' 
+              : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+          }`}
         >
-          <MessageCircle className="h-5 w-5" />
-          <span className="text-sm">消息</span>
+          <MessageCircle className="h-4 w-4" />
+          <span className="mt-0.5">消息</span>
         </Button>
+        
         <Button 
-          variant={activeTab === 'dataEyes' ? 'secondary' : 'ghost'}
+          variant="outline"
           onClick={() => handleTabChange('dataEyes')}
-          className="w-full justify-start space-x-2 h-11"
+          className={`w-full h-14 flex flex-col items-center justify-center py-2 px-1 text-xs rounded-lg transition-colors border-0 ${
+            activeTab === 'dataEyes' 
+              ? 'bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-600' 
+              : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+          }`}
         >
-          <BarChart3 className="h-5 w-5" />
-          <span className="text-sm">BI</span>
+          <BarChart3 className="h-4 w-4" />
+          <span className="mt-0.5">分析</span>
         </Button>
       </div>
-
     </div>
   )
 }

@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import Header from './components/Header'
 import Sidebar from './components/Sidebar'
-import AgentList from './components/AgentList'
 import MainContent from './components/MainContent'
 
 function App() {
@@ -16,24 +15,17 @@ function App() {
       {/* 主要内容区域 */}
       <div className="flex-1 flex overflow-hidden">
         {/* 最左侧导航 */}
-        <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
+        <Sidebar 
+          activeTab={activeTab} 
+          onTabChange={setActiveTab}
+        />
         
-        {/* 根据activeTab决定布局 */}
-        {activeTab === 'hr' ? (
-          <>
-            {/* HR模式：显示Agent列表 + 主内容 */}
-            <AgentList 
-              selectedAgent={selectedAgent} 
-              onAgentChange={setSelectedAgent} 
-            />
-            <MainContent mode="hr" selectedAgent={selectedAgent} />
-          </>
-        ) : (
-          <>
-            {/* dataEyes模式：直接显示主内容 */}
-            <MainContent mode="dataEyes" selectedAgent={2} />
-          </>
-        )}
+        {/* 主内容区域 - 包含AgentList和内容 */}
+        <MainContent 
+          mode={activeTab} 
+          selectedAgent={selectedAgent}
+          onAgentChange={setSelectedAgent}
+        />
       </div>
     </div>
   )
