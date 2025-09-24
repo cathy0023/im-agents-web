@@ -1,4 +1,7 @@
 
+import { useNavigate } from 'react-router-dom'
+import { getAgentById } from '../types/router'
+
 interface AgentListProps {
   selectedAgent: number;
   onAgentChange: (agentId: number) => void;
@@ -6,6 +9,8 @@ interface AgentListProps {
 }
 
 const AgentList = ({ selectedAgent, onAgentChange, isCollapsed = false }: AgentListProps) => {
+  const navigate = useNavigate()
+  
   const agents = [
     { id: 1, name: 'HR智能助手', message: '对话+数据分析', time: '昨天', avatar: 'HR' },
     { id: 2, name: 'DataEyes', message: '纯数据分析专家', time: '10:30', avatar: 'DE' },
@@ -13,6 +18,12 @@ const AgentList = ({ selectedAgent, onAgentChange, isCollapsed = false }: AgentL
   ]
 
   const handleAgentClick = (agentId: number) => {
+    // 使用路由导航替代回调
+    const agent = getAgentById(agentId)
+    if (agent) {
+      navigate(agent.route)
+    }
+    // 保持向后兼容
     onAgentChange(agentId)
     console.log('Selected agent:', agentId)
   }
