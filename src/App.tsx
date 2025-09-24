@@ -4,7 +4,7 @@ import Sidebar from './components/Sidebar'
 import MainContent from './components/MainContent'
 
 function App() {
-  const [activeTab, setActiveTab] = useState<'hr' | 'dataEyes'>('hr')
+  const [activeTab, setActiveTab] = useState<'hr' | 'dataEyes' | 'psychologist'>('hr')
   const [selectedAgent, setSelectedAgent] = useState<number>(1) // 默认选中HR (id: 1)
 
   return (

@@ -1,13 +1,13 @@
-import { MessageCircle, BarChart3 } from 'lucide-react'
+import { MessageCircle, BarChart3, Brain } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface SidebarProps {
-  activeTab: 'hr' | 'dataEyes';
-  onTabChange: (tab: 'hr' | 'dataEyes') => void;
+  activeTab: 'hr' | 'dataEyes' | 'psychologist';
+  onTabChange: (tab: 'hr' | 'dataEyes' | 'psychologist') => void;
 }
 
 const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
-  const handleTabChange = (tab: 'hr' | 'dataEyes') => {
+  const handleTabChange = (tab: 'hr' | 'dataEyes' | 'psychologist') => {
     console.log('Switching to tab:', tab)
     onTabChange(tab)
   }
@@ -40,6 +40,19 @@ const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
         >
           <BarChart3 className="h-4 w-4" />
           <span className="mt-0.5">分析</span>
+        </Button>
+
+        <Button 
+          variant="outline"
+          onClick={() => handleTabChange('psychologist')}
+          className={`w-full h-14 flex flex-col items-center justify-center py-2 px-1 text-xs rounded-lg transition-colors border-0 ${
+            activeTab === 'psychologist' 
+              ? 'bg-purple-50 text-purple-600 hover:bg-purple-100 hover:text-purple-600' 
+              : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+          }`}
+        >
+          <Brain className="h-4 w-4" />
+          <span className="mt-0.5">对练</span>
         </Button>
       </div>
     </div>

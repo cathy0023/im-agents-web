@@ -7,10 +7,11 @@ import SettingsPanel from './SettingsPanel'
 import AgentList from './AgentList'
 import ApiKeyDialog from './ApiKeyDialog'
 import FooterBar from './FooterBar'
+import PsychologistTraining from './PsychologistTraining'
 import { useChatStore } from '../store/chatStore'
 
 interface MainContentProps {
-  mode?: 'hr' | 'dataEyes';
+  mode?: 'hr' | 'dataEyes' | 'psychologist';
   selectedAgent?: number;
   onAgentChange?: (agentId: number) => void;
 }
@@ -212,6 +213,21 @@ const MainContent = ({
             </div>
           </div>
         </div>
+        
+        {/* API Key配置弹窗 */}
+        <ApiKeyDialog 
+          isOpen={isApiKeyDialogOpen}
+          onClose={() => setIsApiKeyDialogOpen(false)}
+        />
+      </>
+    )
+  }
+
+  // 心理测评师对练模式：全屏显示专业对练界面
+  if (mode === 'psychologist') {
+    return (
+      <>
+        <PsychologistTraining className="flex-1" />
         
         {/* API Key配置弹窗 */}
         <ApiKeyDialog 

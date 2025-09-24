@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import MessageInput from './MessageInput'
 
 interface FooterBarProps {
-  mode?: 'hr' | 'dataEyes';
+  mode?: 'hr' | 'dataEyes' | 'psychologist';
   selectedAgent?: number;
   showInput?: boolean;
   showActions?: boolean;
@@ -18,6 +18,7 @@ const FooterBar = ({
   inputPlaceholder 
 }: FooterBarProps) => {
   const getDefaultPlaceholder = () => {
+    if (mode === 'psychologist') return "请输入您的心理咨询回应..."
     return mode === 'dataEyes' || selectedAgent === 2 ? "请输入数据分析需求..." : "请输入HR相关问题..."
   }
 
