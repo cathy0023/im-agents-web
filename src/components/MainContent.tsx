@@ -7,7 +7,8 @@ import SettingsPanel from './SettingsPanel'
 import AgentList from './AgentList'
 import ApiKeyDialog from './ApiKeyDialog'
 import FooterBar from './FooterBar'
-import PsychologistTraining from './PsychologistTraining'
+import TrainingModule from './TrainingModule'
+import TrainingAgentList from './TrainingAgentList'
 import { useChatStore } from '../store/chatStore'
 
 interface MainContentProps {
@@ -223,11 +224,86 @@ const MainContent = ({
     )
   }
 
-  // 心理测评师对练模式：全屏显示专业对练界面
+  // 心理测评师对练模式：包含TrainingAgentList在左侧
   if (mode === 'psychologist') {
     return (
       <>
-        <PsychologistTraining className="flex-1" />
+        <div className="flex-1 flex overflow-hidden">
+          {/* 左侧TrainingAgentList */}
+          <TrainingAgentList 
+            selectedAgent={selectedAgent} 
+            onAgentChange={onAgentChange || (() => {})}
+            isCollapsed={isAgentListCollapsed}
+          />
+          
+          {/* 右侧训练模块 */}
+          <div className="flex-1 flex flex-col h-full">
+            {/* HeaderBar */}
+            <div className="h-12 bg-white border-b border-gray-200 flex items-center justify-between px-4">
+              <div className="flex items-center space-x-3">
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={handleToggleAgentList}
+                  className="h-8 w-8 text-gray-600 hover:text-gray-900"
+                  title="展开/收起训练场景列表"
+                >
+                  <PanelLeft className="h-4 w-4" />
+                </Button>
+                <h2 className="text-lg font-semibold text-gray-900">
+                  {selectedAgent === 4 ? '心理测评师对练' : selectedAgent === 5 ? '英语口语考官对练' : '对练训练'}
+                </h2>
+                {!apiKey && (
+                  <span className="px-2 py-1 text-xs bg-red-100 text-red-600 rounded">
+                    需要配置API Key
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={handleApiKeyConfig}
+                  className="h-8 w-8 text-gray-600 hover:text-gray-900"
+                  title="配置API Key"
+                >
+                  <Key className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={handleClearMessages}
+                  className="h-8 w-8 text-gray-600 hover:text-gray-900"
+                  title="清空对话"
+                >
+                  🗑️
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={() => setIsSettingsPanelVisible(!isSettingsPanelVisible)}
+                  className="h-8 w-8 text-gray-600 hover:text-gray-900"
+                  title="设置"
+                >
+                  <Settings className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            
+            {/* 训练内容区域 */}
+            <div className="flex-1 flex overflow-hidden">
+              <div className="flex-1">
+                <TrainingModule selectedAgent={selectedAgent} />
+              </div>
+              
+              {/* 右侧设置面板 */}
+              <SettingsPanel 
+                isVisible={isSettingsPanelVisible} 
+                onClose={() => setIsSettingsPanelVisible(false)}
+              />
+            </div>
+          </div>
+        </div>
         
         {/* API Key配置弹窗 */}
         <ApiKeyDialog 
