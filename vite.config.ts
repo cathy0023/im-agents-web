@@ -11,4 +11,14 @@ export default defineConfig({
       "@": resolve(import.meta.dirname || process.cwd(), "./src"),
     },
   },
+  server: {
+    proxy: {
+      '/webapi': {
+        target: 'https://jirui.test.mgvai.cn',
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/webapi/, '/webapi')
+      }
+    }
+  }
 })

@@ -157,7 +157,7 @@ export class SSEClient {
   }
 }
 
-// 创建智谱AI流式聊天请求
+// 创建智谱AI流式聊天请求 (保留原有功能，与axios架构兼容)
 export async function createZhipuChatStream(
   request: ChatRequest,
   apiKey: string,
@@ -165,90 +165,201 @@ export async function createZhipuChatStream(
   onError: (error: Error) => void,
   onComplete: () => void
 ): Promise<() => void> {
-  const response = await fetch('https://open.bigmodel.cn/api/paas/v4/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      ...request,
-      stream: true,
-    }),
-  });
+  try {
+    const response = await fetch('https://open.bigmodel.cn/api/paas/v4/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        ...request,
+        stream: true,
+      }),
+    });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`API请求失败: ${response.status} ${errorText}`);
-  }
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`API请求失败: ${response.status} ${errorText}`);
+    }
 
-  const reader = response.body?.getReader();
-  if (!reader) {
-    throw new Error('无法获取响应流');
-  }
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new Error('无法获取响应流');
+    }
 
-  const decoder = new TextDecoder();
-  let buffer = '';
-  let isAborted = false;
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let isAborted = false;
 
-  const abort = () => {
-    isAborted = true;
-    reader.cancel();
-  };
+    const abort = () => {
+      isAborted = true;
+      reader.cancel();
+    };
 
-  // 开始读取流数据
-  const readStream = async () => {
-    try {
-      while (!isAborted) {
-        const { done, value } = await reader.read();
-        
-        if (done) {
-          onComplete();
-          break;
-        }
+    // 开始读取流数据
+    const readStream = async () => {
+      try {
+        while (!isAborted) {
+          const { done, value } = await reader.read();
+          
+          if (done) {
+            onComplete();
+            break;
+          }
 
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
 
-        for (const line of lines) {
-          if (line.trim() === '') continue;
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6);
-            
-            if (data === '[DONE]') {
-              onComplete();
-              return;
-            }
-
-            try {
-              const parsed: ChatStreamChunk = JSON.parse(data);
-              const content = parsed.choices[0]?.delta?.content;
+          for (const line of lines) {
+            if (line.trim() === '') continue;
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6);
               
-              if (content) {
-                onChunk(content);
-              }
-              
-              if (parsed.choices[0]?.finish_reason) {
+              if (data === '[DONE]') {
                 onComplete();
                 return;
               }
-            } catch (error) {
-              console.warn('解析SSE数据失败:', error, 'data:', data);
+
+              try {
+                const parsed: ChatStreamChunk = JSON.parse(data);
+                const content = parsed.choices[0]?.delta?.content;
+                
+                if (content) {
+                  onChunk(content);
+                }
+                
+                if (parsed.choices[0]?.finish_reason) {
+                  onComplete();
+                  return;
+                }
+              } catch (error) {
+                console.warn('解析SSE数据失败:', error, 'data:', data);
+              }
             }
           }
         }
+      } catch (error) {
+        if (!isAborted) {
+          onError(error instanceof Error ? error : new Error('流读取错误'));
+        }
       }
-    } catch (error) {
-      if (!isAborted) {
-        onError(error instanceof Error ? error : new Error('流读取错误'));
-      }
+    };
+
+    // 开始读取
+    readStream();
+
+    // 返回取消函数
+    return abort;
+  } catch (error) {
+    // 使用统一的错误处理
+    console.error('创建智谱AI流失败:', error);
+    onError(error instanceof Error ? error : new Error('创建流失败'));
+    return () => {}; // 返回空的取消函数
+  }
+}
+
+// 通用流式请求创建器 (支持axios兼容的配置)
+export async function createStreamRequest(
+  url: string,
+  options: {
+    method?: string;
+    headers?: Record<string, string>;
+    body?: unknown;
+    timeout?: number;
+  },
+  onChunk: (chunk: string) => void,
+  onError: (error: Error) => void,
+  onComplete: () => void
+): Promise<() => void> {
+  try {
+    const controller = new AbortController();
+    const timeoutId = options.timeout ? setTimeout(() => {
+      controller.abort();
+      onError(new Error('请求超时'));
+    }, options.timeout) : null;
+
+    const response = await fetch(url, {
+      method: options.method || 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+      body: options.body ? JSON.stringify(options.body) : undefined,
+      signal: controller.signal,
+    });
+
+    if (timeoutId) clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
     }
-  };
 
-  // 开始读取
-  readStream();
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new Error('无法获取响应流');
+    }
 
-  // 返回取消函数
-  return abort;
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let isAborted = false;
+
+    const abort = () => {
+      isAborted = true;
+      controller.abort();
+      reader.cancel();
+    };
+
+    // 读取流数据
+    const readStream = async () => {
+      try {
+        while (!isAborted) {
+          const { done, value } = await reader.read();
+          
+          if (done) {
+            onComplete();
+            break;
+          }
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            if (line.trim() === '' || isAborted) continue;
+            
+            // 处理SSE格式数据
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6);
+              
+              if (data === '[DONE]') {
+                onComplete();
+                return;
+              }
+
+              // 直接传递原始数据，让调用者处理解析
+              onChunk(data);
+            } else {
+              // 对于非SSE格式的流数据，直接传递
+              onChunk(line);
+            }
+          }
+        }
+      } catch (error) {
+        if (!isAborted) {
+          onError(error instanceof Error ? error : new Error('流读取错误'));
+        }
+      }
+    };
+
+    readStream();
+    return abort;
+
+  } catch (error) {
+    console.error('创建流请求失败:', error);
+    onError(error instanceof Error ? error : new Error('创建流请求失败'));
+    return () => {};
+  }
 }

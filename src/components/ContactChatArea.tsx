@@ -47,6 +47,7 @@ const ContactChatArea = () => {
 
     // 添加用户消息
     addMessage(conversationId, {
+      conversationId,
       senderId: currentUser.id,
       senderName: currentUser.name,
       senderType: 'user',
@@ -60,6 +61,7 @@ const ContactChatArea = () => {
       const otherParticipant = conversation?.participants.find(p => p.id !== currentUser.id)
       if (otherParticipant) {
         addMessage(conversationId, {
+          conversationId,
           senderId: otherParticipant.id,
           senderName: otherParticipant.name,
           senderType: 'contact',

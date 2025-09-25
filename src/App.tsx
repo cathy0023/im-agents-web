@@ -8,16 +8,21 @@ import ContactsList from './components/ContactsList'
 import ContactMessageLayout from './components/ContactMessageLayout'
 import { getDefaultAgent } from './types/router'
 import { useThemeStore } from './store/themeStore'
+import { useUserStore } from './store/userStore'
 
 function App() {
   const defaultAgent = getDefaultAgent()
   const { theme, setTheme } = useThemeStore()
+  const { initializeSession } = useUserStore()
 
-  // 初始化主题
+  // 初始化主题和用户session
   useEffect(() => {
     // 应用当前主题设置
     setTheme(theme)
-  }, [theme, setTheme])
+    
+    // 初始化用户session
+    initializeSession()
+  }, [theme, setTheme, initializeSession])
 
   return (
     <Router>

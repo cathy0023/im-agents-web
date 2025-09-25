@@ -18,7 +18,7 @@ const MessageLayout = () => {
   const [isAgentListCollapsed, setIsAgentListCollapsed] = useState(false)
   const [isApiKeyDialogOpen, setIsApiKeyDialogOpen] = useState(false)
   
-  const { apiKey, clearAgentMessages } = useChatStore()
+  const { apiKey } = useChatStore()
 
   // 获取当前智能体信息
   const currentAgent: Agent | null = agentType ? getAgentByRoute(agentType) : null
@@ -40,14 +40,15 @@ const MessageLayout = () => {
     setIsAgentListCollapsed(!isAgentListCollapsed)
   }
 
-  const handleApiKeyConfig = () => {
-    setIsApiKeyDialogOpen(true)
-  }
+  // 注释掉的功能暂时移除未使用的处理函数
+  // const handleApiKeyConfig = () => {
+  //   setIsApiKeyDialogOpen(true)
+  // }
 
-  const handleClearMessages = () => {
-    // 清空当前选中的Agent的消息
-    clearAgentMessages(currentAgent.id)
-  }
+  // const handleClearMessages = () => {
+  //   // 清空当前选中的Agent的消息
+  //   clearAgentMessages(currentAgent.id)
+  // }
 
   // 获取内容区域布局
   const getContentLayout = () => {
