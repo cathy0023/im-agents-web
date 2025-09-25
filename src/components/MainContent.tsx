@@ -4,24 +4,30 @@ import { useState, useEffect } from 'react'
 import ChatArea from './ChatArea'
 import ChartArea from './ChartArea'
 import SettingsPanel from './SettingsPanel'
-import AgentList from './AgentList'
+import ConversationList from './ConversationList'
 import ApiKeyDialog from './ApiKeyDialog'
 import FooterBar from './FooterBar'
 import { useChatStore } from '../store/chatStore'
+// import { useConversationStore } from '../store/conversationStore' // 暂时未直接使用
+import type { Conversation } from '@/types/conversation'
 
 interface MainContentProps {
   mode?: 'hr' | 'dataEyes';
   selectedAgent?: number;
+  selectedConversationId?: string;
   onAgentChange?: (agentId: number) => void;
+  onConversationChange?: (conversation: Conversation) => void;
 }
 
 const MainContent = ({ 
   mode = 'hr', 
   selectedAgent = 1, 
-  onAgentChange 
+  selectedConversationId,
+  onAgentChange,
+  onConversationChange
 }: MainContentProps) => {
   const [isSettingsPanelVisible, setIsSettingsPanelVisible] = useState(false)
-  const [isAgentListCollapsed, setIsAgentListCollapsed] = useState(false)
+  const [isConversationListCollapsed, setIsConversationListCollapsed] = useState(false)
   const [isApiKeyDialogOpen, setIsApiKeyDialogOpen] = useState(false)
   
   const { apiKey, clearAgentMessages } = useChatStore()
@@ -33,8 +39,20 @@ const MainContent = ({
     }
   }, [apiKey])
 
-  const handleToggleAgentList = () => {
-    setIsAgentListCollapsed(!isAgentListCollapsed)
+  const handleToggleConversationList = () => {
+    setIsConversationListCollapsed(!isConversationListCollapsed)
+  }
+
+  const handleConversationChange = (conversation: Conversation) => {
+    // 如果是AI智能体对话，同时更新selectedAgent
+    if (conversation.type === 'ai_agent' && conversation.agentId && onAgentChange) {
+      onAgentChange(conversation.agentId)
+    }
+    
+    // 通知父组件对话改变
+    if (onConversationChange) {
+      onConversationChange(conversation)
+    }
   }
 
   const handleApiKeyConfig = () => {
@@ -49,10 +67,10 @@ const MainContent = ({
   // 获取智能体标题
   const getAgentTitle = () => {
     switch(selectedAgent) {
-      case 1: return 'HR智能助手'
+      case 1: return 'HR'
       case 2: return 'DataEyes'
-      case 3: return '对话助手'
-      default: return 'HR智能助手'
+      case 3: return '心理测评师小王'
+      default: return 'HR'
     }
   }
 
@@ -137,11 +155,11 @@ const MainContent = ({
     return (
       <>
         <div className="flex-1 flex overflow-hidden">
-          {/* 左侧AgentList */}
-          <AgentList 
-            selectedAgent={selectedAgent} 
-            onAgentChange={onAgentChange || (() => {})}
-            isCollapsed={isAgentListCollapsed}
+          {/* 左侧对话列表 */}
+          <ConversationList 
+            selectedConversationId={selectedConversationId}
+            onConversationChange={handleConversationChange}
+            isCollapsed={isConversationListCollapsed}
           />
           
           {/* 右侧主要内容区域 */}
@@ -152,9 +170,9 @@ const MainContent = ({
                 <Button 
                   variant="ghost" 
                   size="icon"
-                  onClick={handleToggleAgentList}
+                  onClick={handleToggleConversationList}
                   className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                  title="展开/收起Agent列表"
+                  title="展开/收起对话列表"
                 >
                   <PanelLeft className="h-4 w-4" />
                 </Button>

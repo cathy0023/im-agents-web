@@ -4,6 +4,8 @@ import Header from './components/Header'
 import Sidebar from './components/Sidebar'
 import MessageLayout from './components/MessageLayout'
 import AnalysisLayout from './components/AnalysisLayout'
+import ContactsList from './components/ContactsList'
+import ContactMessageLayout from './components/ContactMessageLayout'
 import { getDefaultAgent } from './types/router'
 import { useThemeStore } from './store/themeStore'
 
@@ -36,9 +38,13 @@ function App() {
             {/* 消息模块路由 */}
             <Route path="/messages" element={<Navigate to={defaultAgent.route} replace />} />
             <Route path="/messages/:agentType" element={<MessageLayout />} />
+            <Route path="/messages/contact/:conversationId" element={<ContactMessageLayout />} />
             
             {/* 分析模块路由 */}
             <Route path="/analysis" element={<AnalysisLayout />} />
+            
+            {/* 通讯录模块路由 */}
+            <Route path="/contacts" element={<ContactsList />} />
             
             {/* 404路由：重定向到默认智能体 */}
             <Route path="*" element={<Navigate to={defaultAgent.route} replace />} />

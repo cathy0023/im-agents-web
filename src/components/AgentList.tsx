@@ -16,7 +16,7 @@ const AgentList = ({ selectedAgent, onAgentChange, isCollapsed = false }: AgentL
   const [agents, setAgents] = useState([
     { 
       id: 1, 
-      name: 'HR智能助手', 
+      name: 'HR', 
       message: '当然，我可以为专业和友好的深度采访客户的人力资源相关问题，请随时提出您的问题，无论是关于招聘策略、薪酬福利、员工培训还是相关政策问题，我都会尽力为您提供帮助。请问您今天有需要咨询的内容？', 
       time: '昨天', 
       avatar: 'HR',
@@ -32,10 +32,10 @@ const AgentList = ({ selectedAgent, onAgentChange, isCollapsed = false }: AgentL
     },
     { 
       id: 3, 
-      name: '对话助手', 
-      message: '专注对话交互', 
+      name: '心理测评师小王', 
+      message: '专注心理测评与咨询服务', 
       time: '09:15', 
-      avatar: 'CA',
+      avatar: 'XW',
       unreadCount: 0
     }
   ])
@@ -67,7 +67,7 @@ const AgentList = ({ selectedAgent, onAgentChange, isCollapsed = false }: AgentL
       {/* Agent列表 */}
       <div className="flex-1 overflow-y-auto">
         <div className="p-2">
-          {agents.map((agent, index) => (
+          {agents.map((agent) => (
             <div 
               key={agent.id} 
               onClick={() => handleAgentClick(agent.id)}

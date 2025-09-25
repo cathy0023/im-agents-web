@@ -1,6 +1,7 @@
 // SSE客户端工具
 // 导入聊天类型
-import type { ChatMessage, ChatRequest, ChatStreamChunk } from '../types/chat';
+import type { ChatRequest, ChatStreamChunk } from '../types/chat';
+// ChatMessage 暂时未使用
 
 export interface SSEMessage {
   event?: string;
@@ -81,7 +82,7 @@ export class SSEClient {
         };
 
         // 连接错误
-        this.eventSource.onerror = (event) => {
+        this.eventSource.onerror = (_event) => {
           clearTimeout(timeout);
           
           if (this.isManualClose) {

@@ -14,13 +14,18 @@ const ZHIPU_CONFIG: ApiConfig = {
 
 // API错误类型
 export class ApiError extends Error {
+  public status?: number;
+  public code?: string;
+
   constructor(
     message: string,
-    public status?: number,
-    public code?: string
+    status?: number,
+    code?: string
   ) {
     super(message);
     this.name = 'ApiError';
+    this.status = status;
+    this.code = code;
   }
 }
 

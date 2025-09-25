@@ -1,4 +1,5 @@
-import { X, Settings, User, Bell, Shield, HelpCircle } from 'lucide-react'
+import { X, Settings, HelpCircle } from 'lucide-react'
+// 暂时未使用: User, Bell, Shield
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 

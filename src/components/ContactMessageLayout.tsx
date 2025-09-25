@@ -1,0 +1,112 @@
+import { useState } from 'react'
+import { PanelLeft, Settings, Key } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import ConversationList from './ConversationList'
+import ContactChatArea from './ContactChatArea'
+import SettingsPanel from './SettingsPanel'
+import ApiKeyDialog from './ApiKeyDialog'
+import { useChatStore } from '../store/chatStore'
+import { useConversationStore } from '../store/conversationStore'
+import type { Conversation } from '@/types/conversation'
+
+const ContactMessageLayout = () => {
+  const [isSettingsPanelVisible, setIsSettingsPanelVisible] = useState(false)
+  const [isConversationListCollapsed, setIsConversationListCollapsed] = useState(false)
+  const [isApiKeyDialogOpen, setIsApiKeyDialogOpen] = useState(false)
+  
+  const { apiKey } = useChatStore()
+  const { currentConversation } = useConversationStore()
+
+  const handleToggleConversationList = () => {
+    setIsConversationListCollapsed(!isConversationListCollapsed)
+  }
+
+  const handleApiKeyConfig = () => {
+    setIsApiKeyDialogOpen(true)
+  }
+
+  const handleConversationChange = (conversation: Conversation) => {
+    // 对话切换逻辑已在ConversationList内部处理
+    console.log('Conversation changed:', conversation.name)
+  }
+
+  return (
+    <>
+      <div className="flex-1 flex overflow-hidden">
+        {/* 左侧对话列表 */}
+        <ConversationList 
+          onConversationChange={handleConversationChange}
+          isCollapsed={isConversationListCollapsed}
+        />
+        
+        {/* 右侧主要内容区域 */}
+        <div className="flex-1 flex flex-col h-full bg-background">
+          {/* HeaderBar */}
+          <div className="h-12 bg-background border-b border-border flex items-center justify-between px-4">
+            <div className="flex items-center space-x-3">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={handleToggleConversationList}
+                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                title="展开/收起对话列表"
+              >
+                <PanelLeft className="h-4 w-4" />
+              </Button>
+              <h2 className="text-lg font-semibold text-foreground">
+                {currentConversation?.name || '选择对话'}
+              </h2>
+              {!apiKey && (
+                <span className="px-2 py-1 text-xs bg-destructive/10 text-destructive rounded">
+                  需要配置API Key
+                </span>
+              )}
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={handleApiKeyConfig}
+                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                title="配置API Key"
+              >
+                <Key className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => setIsSettingsPanelVisible(!isSettingsPanelVisible)}
+                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                title="设置"
+              >
+                <Settings className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+          
+          {/* 主要内容区域 */}
+          <div className="flex-1 flex overflow-hidden">
+            {/* 中间内容区域 */}
+            <div className="flex-1 flex flex-col">
+              <ContactChatArea />
+            </div>
+            
+            {/* 右侧设置面板 */}
+            <SettingsPanel 
+              isVisible={isSettingsPanelVisible} 
+              onClose={() => setIsSettingsPanelVisible(false)}
+            />
+          </div>
+        </div>
+      </div>
+      
+      {/* API Key配置弹窗 */}
+      <ApiKeyDialog 
+        isOpen={isApiKeyDialogOpen}
+        onClose={() => setIsApiKeyDialogOpen(false)}
+      />
+    </>
+  )
+}
+
+export default ContactMessageLayout

@@ -1,5 +1,6 @@
 import { useParams, Navigate } from 'react-router-dom'
-import { PanelLeft, Settings, Key } from 'lucide-react'
+import { PanelLeft } from 'lucide-react'
+// 暂时未使用: Settings, Key
 import { Button } from '@/components/ui/button'
 import { useState, useEffect } from 'react'
 import ChatArea from './ChatArea'
@@ -22,18 +23,18 @@ const MessageLayout = () => {
   // 获取当前智能体信息
   const currentAgent: Agent | null = agentType ? getAgentByRoute(agentType) : null
   
-  // 如果找不到智能体，重定向到默认智能体
-  if (!currentAgent) {
-    const defaultAgent = getDefaultAgent()
-    return <Navigate to={defaultAgent.route} replace />
-  }
-
   // 检查是否需要显示API Key配置
   useEffect(() => {
     if (!apiKey) {
       setIsApiKeyDialogOpen(true)
     }
   }, [apiKey])
+  
+  // 如果找不到智能体，重定向到默认智能体
+  if (!currentAgent) {
+    const defaultAgent = getDefaultAgent()
+    return <Navigate to={defaultAgent.route} replace />
+  }
 
   const handleToggleAgentList = () => {
     setIsAgentListCollapsed(!isAgentListCollapsed)
@@ -148,13 +149,8 @@ const MessageLayout = () => {
                 <PanelLeft className="h-4 w-4" />
               </Button>
               <h2 className="text-lg font-semibold text-foreground">{currentAgent.title}</h2>
-              {!apiKey && (
-                <span className="px-2 py-1 text-xs bg-destructive/10 text-destructive rounded">
-                  需要配置API Key
-                </span>
-              )}
             </div>
-            <div className="flex items-center space-x-2">
+            {/* <div className="flex items-center space-x-2">
               <Button 
                 variant="ghost" 
                 size="icon"
@@ -182,7 +178,7 @@ const MessageLayout = () => {
               >
                 <Settings className="h-4 w-4" />
               </Button>
-            </div>
+            </div> */}
           </div>
           
           {/* 主要内容区域 */}

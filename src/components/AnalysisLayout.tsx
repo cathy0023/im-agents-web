@@ -1,5 +1,6 @@
-import { Settings, Key } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+// 这些导入暂时未使用，将来可能需要
+// import { Settings, Key } from 'lucide-react'
+// import { Button } from '@/components/ui/button'
 import { useState, useEffect } from 'react'
 import ChartArea from './ChartArea'
 import SettingsPanel from './SettingsPanel'
@@ -11,7 +12,8 @@ const AnalysisLayout = () => {
   const [isSettingsPanelVisible, setIsSettingsPanelVisible] = useState(false)
   const [isApiKeyDialogOpen, setIsApiKeyDialogOpen] = useState(false)
   
-  const { apiKey, clearAgentMessages } = useChatStore()
+  const { apiKey } = useChatStore()
+  // clearAgentMessages 暂时未使用
 
   // 检查是否需要显示API Key配置
   useEffect(() => {
@@ -20,14 +22,15 @@ const AnalysisLayout = () => {
     }
   }, [apiKey])
 
-  const handleApiKeyConfig = () => {
-    setIsApiKeyDialogOpen(true)
-  }
+  // 暂时未使用的函数，将来可能需要
+  // const handleApiKeyConfig = () => {
+  //   setIsApiKeyDialogOpen(true)
+  // }
 
-  const handleClearMessages = () => {
-    // 清空分析模块相关的消息（使用特殊的ID）
-    clearAgentMessages(999) // 使用特殊ID表示分析模块
-  }
+  // const handleClearMessages = () => {
+  //   // 清空分析模块相关的消息（使用特殊的ID）
+  //   clearAgentMessages(999) // 使用特殊ID表示分析模块
+  // }
 
   return (
     <>

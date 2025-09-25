@@ -1,11 +1,10 @@
-import { MessageCircle, BarChart3, BarChart4 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { MessageCircle, BarChart3, Users } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { getDefaultAgent } from '../types/router'
 
 interface SidebarProps {
-  activeTab?: 'messages' | 'analysis';
-  onTabChange?: (tab: 'messages' | 'analysis') => void;
+  activeTab?: 'messages' | 'analysis' | 'contacts';
+  onTabChange?: (tab: 'messages' | 'analysis' | 'contacts') => void;
 }
 
 const Sidebar = ({ onTabChange }: SidebarProps) => {
@@ -15,8 +14,9 @@ const Sidebar = ({ onTabChange }: SidebarProps) => {
   // 从当前路径判断活跃状态
   const isMessagesActive = location.pathname.startsWith('/messages')
   const isAnalysisActive = location.pathname.startsWith('/analysis')
+  const isContactsActive = location.pathname.startsWith('/contacts')
 
-  const handleTabChange = (tab: 'messages' | 'analysis') => {
+  const handleTabChange = (tab: 'messages' | 'analysis' | 'contacts') => {
     console.log('Switching to tab:', tab)
     
     // 路由导航
@@ -26,6 +26,8 @@ const Sidebar = ({ onTabChange }: SidebarProps) => {
       navigate(defaultAgent.route)
     } else if (tab === 'analysis') {
       navigate('/analysis')
+    } else if (tab === 'contacts') {
+      navigate('/contacts')
     }
     
     // 保持向后兼容
@@ -65,6 +67,20 @@ const Sidebar = ({ onTabChange }: SidebarProps) => {
             isAnalysisActive ? 'scale-110' : ''
           }`} />
           <span className="text-[10px] font-medium mt-1">分析</span>
+        </button>
+
+        <button
+          onClick={() => handleTabChange('contacts')}
+          className={`group relative w-full h-12 flex flex-col items-center justify-center rounded-xl transition-all duration-200 cursor-pointer ${
+            isContactsActive 
+              ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25' 
+              : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
+          }`}
+        >
+          <Users className={`h-5 w-5 transition-transform group-hover:scale-110 ${
+            isContactsActive ? 'scale-110' : ''
+          }`} />
+          <span className="text-[10px] font-medium mt-1">通讯录</span>
         </button>
       </div>
     </div>

@@ -14,7 +14,7 @@ export interface RouteParams {
 }
 
 // 导航标签类型
-export type NavigationTab = 'messages' | 'analysis'
+export type NavigationTab = 'messages' | 'analysis' | 'contacts'
 
 // 智能体类型
 export type AgentType = 'hr' | 'dataEyes' | 'assistant'
@@ -24,7 +24,7 @@ export const AGENTS: Record<AgentType, Agent> = {
   hr: {
     id: 1,
     name: 'hr',
-    title: 'HR智能助手',
+    title: 'HR',
     route: '/messages/hr'
   },
   dataEyes: {
@@ -36,7 +36,7 @@ export const AGENTS: Record<AgentType, Agent> = {
   assistant: {
     id: 3,
     name: 'assistant',
-    title: '对话助手',
+    title: '心理测评师小王',
     route: '/messages/assistant'
   }
 }
