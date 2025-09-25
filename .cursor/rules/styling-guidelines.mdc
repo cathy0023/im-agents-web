@@ -4,24 +4,150 @@ globs: *.tsx,*.css,src/components/**/*
 
 # 样式开发指南
 
-## 🎨 Tailwind CSS 优先原则
+## 🌓 主题模式支持规范 (CRITICAL - 最高优先级)
+
+### ⚠️ 强制要求：所有新组件必须支持暗黑/浅色模式
+
+**创建任何新组件时，必须首先考虑主题兼容性！**
+
+### 🚫 绝对禁止的做法
+```typescript
+// ❌ 严禁使用硬编码颜色 - 会破坏主题切换
+<div className="bg-white text-black">
+<div className="bg-gray-100 text-gray-900">
+<div className="bg-gray-50 border-gray-200">
+<span className="text-red-600 bg-red-100">
+<button className="hover:bg-gray-100">
+
+// ❌ 严禁使用固定颜色值
+<div style={{backgroundColor: '#ffffff'}}>
+<div className="bg-[#f5f5f5]">
+```
+
+### ✅ 强制使用 shadcn 语义化颜色
+```typescript
+// ✅ 正确：使用语义化颜色，自动支持主题切换
+<div className="bg-background text-foreground">
+<div className="bg-muted text-muted-foreground">
+<div className="bg-card text-card-foreground">
+<div className="bg-accent text-accent-foreground">
+<span className="text-destructive bg-destructive/10">
+<button className="hover:bg-accent">
+```
+
+### 📋 完整语义化颜色映射表 (必须遵循)
+
+| 旧的硬编码颜色 | 新的语义化颜色 | 用途 | 示例 |
+|---|---|---|---|
+| `bg-white` | `bg-background` | 主背景色 | 页面、卡片背景 |
+| `bg-gray-50` | `bg-muted/30` | 次要背景色 | 数据展示区域 |
+| `bg-gray-100` | `bg-muted` 或 `bg-accent` | 悬停/选中背景 | 按钮悬停态 |
+| `text-black` | `text-foreground` | 主文字颜色 | 标题、正文 |
+| `text-gray-900` | `text-foreground` | 主文字颜色 | 重要文本 |
+| `text-gray-600` | `text-muted-foreground` | 次要文字颜色 | 描述文本 |
+| `text-gray-500` | `text-muted-foreground` | 辅助文字颜色 | 提示文本 |
+| `text-gray-400` | `text-muted-foreground/70` | 最次要文字 | 占位符文本 |
+| `border-gray-200` | `border-border` | 边框颜色 | 分割线、边框 |
+| `border-gray-300` | `border-border` | 输入框边框 | 表单边框 |
+| `bg-red-100 text-red-600` | `bg-destructive/10 text-destructive` | 错误状态 | 错误提示 |
+| `bg-blue-50 text-blue-600` | `bg-primary/10 text-primary` | 选中状态 | 激活状态 |
+
+### 🔍 组件开发检查清单 (每个组件都必须检查)
+
+#### ✅ 开发前检查
+- [ ] **所有背景色是否使用了 `bg-background`、`bg-muted`、`bg-card` 等语义化颜色？**
+- [ ] **所有文字颜色是否使用了 `text-foreground`、`text-muted-foreground` 等？**
+- [ ] **所有边框是否使用了 `border-border`？**
+- [ ] **是否避免了所有 `gray-*` 硬编码颜色？**
+
+#### ✅ 开发中检查
+- [ ] **在浅色模式下测试组件显示效果**
+- [ ] **在深色模式下测试组件显示效果**
+- [ ] **切换主题时组件过渡是否正常？**
+- [ ] **所有交互状态（hover、focus、active）在两种模式下都正确显示？**
+
+#### ✅ 提交前检查
+- [ ] **文字在两种模式下都有足够的对比度？**
+- [ ] **背景色在两种模式下都清晰可见？**
+- [ ] **边框在两种模式下都能区分内容区域？**
+- [ ] **状态颜色（错误、成功、警告）在两种模式下都准确传达信息？**
+
+### 🎯 主题切换组件使用方式
+```typescript
+// ✅ 在组件中正确使用主题状态
+import { useThemeStore } from '@/store/themeStore'
+
+const MyComponent = () => {
+  const { theme, toggleTheme } = useThemeStore()
+  
+  return (
+    <div className="bg-background text-foreground border border-border">
+      {/* 所有子元素都使用语义化颜色 */}
+      <h1 className="text-foreground">标题</h1>
+      <p className="text-muted-foreground">描述文本</p>
+      <Button className="bg-primary text-primary-foreground">
+        操作按钮
+      </Button>
+    </div>
+  )
+}
+```
+
+### 🎨 常用组件颜色模式
+
+#### 卡片组件
+```typescript
+// ✅ 正确的卡片颜色
+<Card className="bg-card text-card-foreground border-border">
+  <CardHeader className="border-b border-border">
+    <CardTitle className="text-foreground">标题</CardTitle>
+  </CardHeader>
+  <CardContent className="text-muted-foreground">
+    内容
+  </CardContent>
+</Card>
+```
+
+#### 表单组件
+```typescript
+// ✅ 正确的表单颜色
+<div className="space-y-4">
+  <label className="text-foreground font-medium">标签</label>
+  <Input className="bg-background text-foreground border-border focus:border-primary" />
+  <p className="text-muted-foreground text-sm">帮助文本</p>
+</div>
+```
+
+#### 状态提示组件
+```typescript
+// ✅ 正确的状态颜色
+<div className="bg-destructive/10 text-destructive border border-destructive/20 rounded p-3">
+  错误信息
+</div>
+<div className="bg-primary/10 text-primary border border-primary/20 rounded p-3">
+  成功信息
+</div>
+```
+
+## 🎨 Tailwind CSS 使用规范
 
 ### ✅ 统一样式方案
 - **仅使用 Tailwind CSS** 进行样式设计
 - **配合 shadcn UI** 组件的预设样式
+- **严格使用语义化颜色** 确保主题兼容性
 - 使用 [cn 工具函数](mdc:src/lib/utils.ts) 合并类名
 
 ### 基础用法
 ```typescript
-// ✅ 使用 Tailwind 类名
-<div className="flex items-center justify-between p-4 bg-white border rounded-lg shadow-sm">
+// ✅ 使用 Tailwind 类名（注意：使用语义化颜色）
+<div className="flex items-center justify-between p-4 bg-background border-b border-border">
 
 // ✅ 使用 cn 函数合并条件样式
 import { cn } from '@/lib/utils'
 
 <div className={cn(
-  "base-styles flex items-center p-4",
-  isActive && "bg-blue-50 border-blue-200",
+  "base-styles flex items-center p-4 bg-background",
+  isActive && "bg-primary/10 text-primary",
   disabled && "opacity-50 cursor-not-allowed"
 )}>
 ```
@@ -38,19 +164,23 @@ import styles from './Component.module.css'
 const StyledDiv = styled.div`
   display: flex;
 `
+
+// ❌ 禁止硬编码颜色（最重要）
+<div className="bg-white text-gray-900 border-gray-200">
 ```
 
 ## 🎯 shadcn UI 样式集成
 
 ### 使用 shadcn 变量系统
 ```typescript
-// ✅ 使用 shadcn 的设计令牌
+// ✅ 使用 shadcn 的设计令牌（自动支持主题）
 <div className="bg-background text-foreground border border-border">
 
 // ✅ 使用 shadcn 的颜色系统
 <Button variant="default">主要按钮</Button>
 <Button variant="outline">次要按钮</Button>
 <Button variant="ghost">透明按钮</Button>
+<Button variant="destructive">危险按钮</Button>
 
 // ✅ 使用 shadcn 的尺寸系统
 <Button size="sm">小按钮</Button>
@@ -60,14 +190,14 @@ const StyledDiv = styled.div`
 
 ### 扩展 shadcn 组件样式
 ```typescript
-// ✅ 通过 className 扩展样式
-<Button className="w-full mt-4">
+// ✅ 通过 className 扩展样式（保持主题兼容性）
+<Button className="w-full mt-4 bg-primary hover:bg-primary/90">
   自定义宽度和间距
 </Button>
 
 // ✅ 使用 cn 函数组合样式
 <Card className={cn(
-  "hover:shadow-lg transition-shadow",
+  "hover:shadow-lg transition-shadow bg-card",
   isSelected && "ring-2 ring-primary"
 )}>
 ```
@@ -80,179 +210,90 @@ const StyledDiv = styled.div`
 <div className="w-full md:w-1/2 lg:w-1/3 xl:w-1/4">
 
 // ✅ 响应式文字大小
-<h1 className="text-lg md:text-xl lg:text-2xl xl:text-3xl">
+<h1 className="text-lg md:text-xl lg:text-2xl xl:text-3xl text-foreground">
 
 // ✅ 响应式间距
-<div className="p-4 md:p-6 lg:p-8">
+<div className="p-4 md:p-6 lg:p-8 bg-background">
 
 // ✅ 响应式显示/隐藏
 <div className="hidden md:block">桌面端显示</div>
 <div className="block md:hidden">移动端显示</div>
 ```
 
-### 常用响应式模式
-```typescript
-// ✅ 卡片网格布局
-<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-
-// ✅ 导航栏响应式
-<nav className="flex flex-col md:flex-row md:items-center gap-4">
-
-// ✅ 侧边栏布局
-<div className="flex flex-col lg:flex-row">
-  <aside className="w-full lg:w-64">侧边栏</aside>
-  <main className="flex-1">主内容</main>
-</div>
-```
-
-## 🎨 设计系统规范
-
-### 颜色使用
-```typescript
-// ✅ 使用 shadcn 的语义化颜色
-<div className="bg-primary text-primary-foreground">   // 主色
-<div className="bg-secondary text-secondary-foreground"> // 次要色
-<div className="bg-muted text-muted-foreground">       // 静音色
-<div className="bg-destructive text-destructive-foreground"> // 危险色
-
-// ✅ 状态颜色
-<div className="bg-green-50 text-green-700 border-green-200"> // 成功
-<div className="bg-yellow-50 text-yellow-700 border-yellow-200"> // 警告
-<div className="bg-red-50 text-red-700 border-red-200">     // 错误
-```
-
-### 间距系统
-```typescript
-// ✅ 使用一致的间距尺度
-<div className="p-2">   // 8px
-<div className="p-4">   // 16px
-<div className="p-6">   // 24px
-<div className="p-8">   // 32px
-
-// ✅ 组件间距
-<div className="space-y-4">  // 垂直间距
-<div className="space-x-4">  // 水平间距
-```
-
-### 阴影和边框
-```typescript
-// ✅ 使用预定义的阴影
-<div className="shadow-sm">   // 小阴影
-<div className="shadow-md">   // 中等阴影
-<div className="shadow-lg">   // 大阴影
-
-// ✅ 边框样式
-<div className="border border-border rounded-md">
-<div className="border-2 border-primary rounded-lg">
-```
-
 ## 🚀 动画和交互
 
 ### 过渡效果
 ```typescript
-// ✅ 使用 Tailwind 过渡类
-<button className="transition-colors hover:bg-gray-100">
+// ✅ 使用 Tailwind 过渡类（注意主题颜色）
+<button className="transition-colors hover:bg-accent text-foreground">
 <div className="transition-all duration-300 hover:scale-105">
 <div className="transition-transform hover:translate-y-1">
-
-// ✅ shadcn 动画类（通过 tailwindcss-animate）
-<div className="animate-fade-in">
-<div className="animate-slide-up">
 ```
 
 ### 悬停和焦点状态
 ```typescript
-// ✅ 交互状态
-<button className="hover:bg-gray-100 focus:ring-2 focus:ring-primary">
-<input className="focus:border-primary focus:ring-1 focus:ring-primary">
+// ✅ 交互状态（使用语义化颜色）
+<button className="hover:bg-accent focus:ring-2 focus:ring-primary text-foreground">
+<input className="focus:border-primary focus:ring-1 focus:ring-primary bg-background text-foreground">
 
 // ✅ 禁用状态
 <button className="disabled:opacity-50 disabled:cursor-not-allowed">
 ```
 
-## 📱 移动端优化
+## ⚠️ 常见错误和修复
 
-### 触摸友好设计
+### 错误示例和正确修复
 ```typescript
-// ✅ 足够的触摸目标大小
-<button className="min-h-[44px] min-w-[44px] p-2">
+// ❌ 错误：硬编码白色背景
+<div className="bg-white p-4 shadow">
 
-// ✅ 移动端手势支持
-<div className="overflow-x-auto">
-<div className="touch-pan-x">
+// ✅ 正确：语义化背景色
+<div className="bg-background p-4 shadow">
+
+// ❌ 错误：硬编码灰色文字
+<p className="text-gray-600">描述文本</p>
+
+// ✅ 正确：语义化文字颜色
+<p className="text-muted-foreground">描述文本</p>
+
+// ❌ 错误：硬编码边框
+<div className="border border-gray-200">
+
+// ✅ 正确：语义化边框
+<div className="border border-border">
+
+// ❌ 错误：硬编码错误状态
+<div className="bg-red-100 text-red-600 p-2">
+
+// ✅ 正确：语义化错误状态
+<div className="bg-destructive/10 text-destructive p-2">
 ```
 
-### 移动端特定样式
-```typescript
-// ✅ 移动端安全区域
-<div className="pb-safe"> // 底部安全区域
+## 🔧 开发工具和调试
 
-// ✅ 移动端视口单位
-<div className="h-screen md:h-auto"> // 移动端全屏高度
+### 主题切换测试
+```bash
+# 1. 在浅色模式下预览组件
+# 2. 切换到深色模式
+# 3. 检查所有元素是否正确显示
+# 4. 测试交互状态
+# 5. 确认无硬编码颜色
 ```
 
-## 🔧 性能优化
+### 调试技巧
+- 使用浏览器开发者工具检查 CSS 变量
+- 确保所有颜色都使用 `var(--*)` CSS 变量
+- 在两种主题模式之间快速切换测试
 
-### 样式性能
-```typescript
-// ✅ 避免复杂的选择器
-<div className="flex items-center"> // 简单直接
+## ✅ 最终检查清单
 
-// ✅ 使用 Tailwind 的 JIT 模式
-// 自动删除未使用的样式
+### 每个组件提交前必须检查
+- [ ] **没有使用任何 `bg-white`、`bg-gray-*`、`text-gray-*`、`border-gray-*` 类**
+- [ ] **所有颜色都使用 shadcn 语义化颜色**
+- [ ] **在浅色模式下完美显示**
+- [ ] **在深色模式下完美显示**
+- [ ] **主题切换时过渡自然**
+- [ ] **所有交互状态在两种模式下都正确**
+- [ ] **文字对比度在两种模式下都充足**
 
-// ✅ 合理使用 transform
-<div className="transform hover:scale-105"> // GPU 加速
-```
-
-## 📏 组件样式模式
-
-### 容器组件
-```typescript
-// ✅ 页面容器
-<div className="min-h-screen bg-background">
-  <div className="container mx-auto px-4 py-8">
-    内容
-  </div>
-</div>
-
-// ✅ 卡片容器
-<Card className="w-full max-w-md mx-auto">
-  <CardHeader>
-    <CardTitle>标题</CardTitle>
-  </CardHeader>
-  <CardContent>
-    内容
-  </CardContent>
-</Card>
-```
-
-### 布局组件
-```typescript
-// ✅ 弹性布局
-<div className="flex flex-col md:flex-row gap-4">
-  <div className="flex-1">主内容</div>
-  <div className="w-full md:w-80">侧边栏</div>
-</div>
-
-// ✅ 网格布局
-<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-  {items.map(item => (
-    <Card key={item.id}>内容</Card>
-  ))}
-</div>
-```
-
-## ✅ 样式检查清单
-
-### 开发时检查
-- [ ] 是否使用了 shadcn UI 组件？
-- [ ] 是否仅使用 Tailwind CSS？
-- [ ] 是否使用了 cn 函数合并类名？
-- [ ] 是否考虑了响应式设计？
-
-### 完成时检查
-- [ ] 在不同屏幕尺寸下表现正常？
-- [ ] 交互状态（hover、focus）是否正确？
-- [ ] 是否符合项目设计规范？
-- [ ] 性能是否良好（无过度复杂的样式）？
+记住：**主题兼容性是强制要求，不是可选功能！**

@@ -4,6 +4,28 @@ globs: *.tsx,src/components/**/*.tsx
 
 # React 组件开发规则
 
+## 🌓 **CRITICAL: 主题模式优先原则**
+
+### ⚠️ 第一要务：所有新组件必须支持主题切换
+**创建任何组件前，必须确保使用 shadcn 语义化颜色！**
+
+```typescript
+// ✅ 强制要求：使用语义化颜色
+<div className="bg-background text-foreground border-border">
+<Card className="bg-card text-card-foreground">
+<Button className="bg-primary text-primary-foreground">
+
+// ❌ 严禁：硬编码颜色（会破坏主题切换）
+<div className="bg-white text-gray-900 border-gray-200">
+<div className="bg-gray-50 text-black">
+```
+
+### 🔍 组件创建前必须检查
+- [ ] 是否使用了 `bg-background` 而不是 `bg-white`？
+- [ ] 是否使用了 `text-foreground` 而不是 `text-black` 或 `text-gray-900`？
+- [ ] 是否使用了 `border-border` 而不是 `border-gray-200`？
+- [ ] 是否避免了所有 `gray-*` 硬编码颜色？
+
 ## 🎨 **CRITICAL: shadcn UI 组件优先原则**
 
 ### ✅ 正确的组件开发流程

@@ -107,7 +107,7 @@ const MessageInput = ({ className = '', placeholder }: MessageInputProps) => {
           onClick={handleStop}
           variant="outline" 
           size="icon" 
-          className="px-4 py-3 border-red-300 text-red-600 hover:bg-red-50"
+          className="px-4 py-3 border-destructive text-destructive hover:bg-destructive/10"
         >
           <svg 
             className="w-4 h-4" 

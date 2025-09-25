@@ -1,4 +1,4 @@
-import { MessageCircle, BarChart3 } from 'lucide-react'
+import { MessageCircle, BarChart3, BarChart4 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { getDefaultAgent } from '../types/router'
@@ -35,34 +35,37 @@ const Sidebar = ({ onTabChange }: SidebarProps) => {
   }
 
   return (
-    <div className="w-24 bg-white border-r border-gray-200 flex flex-col h-full">
+    <div className="w-20 bg-muted/30 border-r border-border/50 flex flex-col h-full backdrop-blur-sm">
+      
       {/* 功能导航 */}
-      <div className="p-3 flex flex-col space-y-1">
-        <Button 
-          variant="outline"
+      <div className="flex-1 p-3 flex flex-col space-y-2">
+        <button
           onClick={() => handleTabChange('messages')}
-          className={`w-full h-14 flex flex-col items-center justify-center py-2 px-1 text-xs rounded-lg transition-colors border-0 ${
+          className={`group relative w-full h-12 flex flex-col items-center justify-center rounded-xl transition-all duration-200 cursor-pointer ${
             isMessagesActive 
-              ? 'bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-600' 
-              : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+              ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25' 
+              : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
           }`}
         >
-          <MessageCircle className="h-4 w-4" />
-          <span className="mt-0.5">消息</span>
-        </Button>
+          <MessageCircle className={`h-5 w-5 transition-transform group-hover:scale-110 ${
+            isMessagesActive ? 'scale-110' : ''
+          }`} />
+          <span className="text-[10px] font-medium mt-1">消息</span>
+        </button>
         
-        <Button 
-          variant="outline"
+        <button
           onClick={() => handleTabChange('analysis')}
-          className={`w-full h-14 flex flex-col items-center justify-center py-2 px-1 text-xs rounded-lg transition-colors border-0 ${
+          className={`group relative w-full h-12 flex flex-col items-center justify-center rounded-xl transition-all duration-200 cursor-pointer ${
             isAnalysisActive 
-              ? 'bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-600' 
-              : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+              ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25' 
+              : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
           }`}
         >
-          <BarChart3 className="h-4 w-4" />
-          <span className="mt-0.5">分析</span>
-        </Button>
+          <BarChart3 className={`h-5 w-5 transition-transform group-hover:scale-110 ${
+            isAnalysisActive ? 'scale-110' : ''
+          }`} />
+          <span className="text-[10px] font-medium mt-1">分析</span>
+        </button>
       </div>
     </div>
   )

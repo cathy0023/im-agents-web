@@ -1,6 +1,8 @@
 
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getAgentById } from '../types/router'
+import { Badge } from '@/components/ui/badge'
 
 interface AgentListProps {
   selectedAgent: number;
@@ -11,13 +13,43 @@ interface AgentListProps {
 const AgentList = ({ selectedAgent, onAgentChange, isCollapsed = false }: AgentListProps) => {
   const navigate = useNavigate()
   
-  const agents = [
-    { id: 1, name: 'HR智能助手', message: '对话+数据分析', time: '昨天', avatar: 'HR' },
-    { id: 2, name: 'DataEyes', message: '纯数据分析专家', time: '10:30', avatar: 'DE' },
-    { id: 3, name: '对话助手', message: '专注对话交互', time: '09:15', avatar: 'CA' }
-  ]
+  const [agents, setAgents] = useState([
+    { 
+      id: 1, 
+      name: 'HR智能助手', 
+      message: '当然，我可以为专业和友好的深度采访客户的人力资源相关问题，请随时提出您的问题，无论是关于招聘策略、薪酬福利、员工培训还是相关政策问题，我都会尽力为您提供帮助。请问您今天有需要咨询的内容？', 
+      time: '昨天', 
+      avatar: 'HR',
+      unreadCount: 0
+    },
+    { 
+      id: 2, 
+      name: 'DataEyes', 
+      message: '纯数据分析专家', 
+      time: '10:30', 
+      avatar: 'DE',
+      unreadCount: 2
+    },
+    { 
+      id: 3, 
+      name: '对话助手', 
+      message: '专注对话交互', 
+      time: '09:15', 
+      avatar: 'CA',
+      unreadCount: 0
+    }
+  ])
 
   const handleAgentClick = (agentId: number) => {
+    // 清除未读消息
+    setAgents(prevAgents => 
+      prevAgents.map(agent => 
+        agent.id === agentId 
+          ? { ...agent, unreadCount: 0 }
+          : agent
+      )
+    )
+    
     // 使用路由导航替代回调
     const agent = getAgentById(agentId)
     if (agent) {
@@ -29,53 +61,65 @@ const AgentList = ({ selectedAgent, onAgentChange, isCollapsed = false }: AgentL
   }
 
   return (
-    <div className={`bg-white border-r border-gray-200 flex flex-col h-full transition-all duration-300 ${
+    <div className={`bg-background border-r border-border/50 flex flex-col h-full transition-all duration-300 ${
       isCollapsed ? 'w-16' : 'w-80'
     }`}>
       {/* Agent列表 */}
       <div className="flex-1 overflow-y-auto">
-        <div className="py-3 px-2">
-          {agents.map((agent) => (
+        <div className="p-2">
+          {agents.map((agent, index) => (
             <div 
               key={agent.id} 
               onClick={() => handleAgentClick(agent.id)}
-              className={`flex items-start rounded-lg cursor-pointer transition-colors ${
+              className={`flex items-center px-3 py-3 cursor-pointer transition-colors ${
                 isCollapsed 
-                  ? 'p-2 justify-center' 
-                  : 'space-x-3 p-3'
+                  ? 'justify-center' 
+                  : 'space-x-3'
               } ${
                 selectedAgent === agent.id 
-                  ? 'bg-blue-50 border border-blue-200' 
-                  : 'hover:bg-gray-50'
+                  ? 'bg-primary/10 rounded-lg' 
+                  : 'hover:bg-muted/30'
               }`}
               title={isCollapsed ? `${agent.name} - ${agent.message}` : ''}
             >
-              <div className="flex-shrink-0">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                  selectedAgent === agent.id
-                    ? 'bg-gradient-to-br from-blue-600 to-blue-500'
-                    : 'bg-gradient-to-br from-blue-500 to-purple-600'
-                }`}>
-                  <span className="text-white text-sm font-medium">
+              {/* 头像 */}
+              <div className="flex-shrink-0 relative">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center">
+                  <span className="text-primary-foreground text-sm font-medium">
                     {agent.avatar}
                   </span>
                 </div>
+                {/* Badge 消息提醒 - 位于头像右上角 */}
+                {agent.unreadCount > 0 && (
+                  <Badge 
+                    variant="destructive" 
+                    className="absolute -top-1 -right-1 h-5 min-w-5 flex items-center justify-center p-0 text-xs text-white"
+                  >
+                    {agent.unreadCount > 99 ? '99+' : agent.unreadCount}
+                  </Badge>
+                )}
               </div>
+              
+              {/* 内容区域 */}
               {!isCollapsed && (
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <p className={`text-sm font-medium truncate ${
-                      selectedAgent === agent.id ? 'text-blue-900' : 'text-gray-900'
-                    }`}>
-                      {agent.name}
-                    </p>
-                    <span className="text-xs text-gray-500">{agent.time}</span>
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <h3 className={`text-sm font-medium truncate ${
+                          selectedAgent === agent.id ? 'text-primary' : 'text-foreground'
+                        }`}>
+                          {agent.name}
+                        </h3>
+                        <span className="text-xs text-muted-foreground ml-2">
+                          {agent.time}
+                        </span>
+                      </div>
+                      <p className="text-sm text-muted-foreground truncate leading-tight">
+                        {agent.message}
+                      </p>
+                    </div>
                   </div>
-                  <p className={`text-sm truncate mt-1 ${
-                    selectedAgent === agent.id ? 'text-blue-700' : 'text-gray-600'
-                  }`}>
-                    {agent.message}
-                  </p>
                 </div>
               )}
             </div>

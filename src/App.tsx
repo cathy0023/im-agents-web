@@ -1,16 +1,25 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { useEffect } from 'react'
 import Header from './components/Header'
 import Sidebar from './components/Sidebar'
 import MessageLayout from './components/MessageLayout'
 import AnalysisLayout from './components/AnalysisLayout'
 import { getDefaultAgent } from './types/router'
+import { useThemeStore } from './store/themeStore'
 
 function App() {
   const defaultAgent = getDefaultAgent()
+  const { theme, setTheme } = useThemeStore()
+
+  // 初始化主题
+  useEffect(() => {
+    // 应用当前主题设置
+    setTheme(theme)
+  }, [theme, setTheme])
 
   return (
     <Router>
-      <div className="h-screen flex flex-col bg-gray-100">
+      <div className="h-screen flex flex-col bg-background text-foreground">
         {/* 顶部Header */}
         <Header />
         

@@ -11,12 +11,12 @@ const SettingsPanel = ({ isVisible = true, onClose }: SettingsPanelProps) => {
   if (!isVisible) return null;
 
   return (
-    <div className="w-[400px] bg-white border-l border-gray-200 flex flex-col h-full">
+    <div className="w-[400px] bg-background border-l border-border flex flex-col h-full">
       {/* 标题栏 */}
-      <div className="h-12 border-b border-gray-200 flex items-center justify-between px-4">
+      <div className="h-12 border-b border-border flex items-center justify-between px-4">
         <div className="flex items-center space-x-2">
-          <Settings className="h-5 w-5 text-gray-600" />
-          <h3 className="text-lg font-semibold text-gray-900">设置</h3>
+          <Settings className="h-5 w-5 text-muted-foreground" />
+          <h3 className="text-lg font-semibold text-foreground">设置</h3>
         </div>
         {onClose && (
           <Button variant="ghost" size="icon" onClick={onClose}>
@@ -34,9 +34,9 @@ const SettingsPanel = ({ isVisible = true, onClose }: SettingsPanelProps) => {
               <span className="text-primary-foreground text-lg font-medium">李</span>
             </div>
             <div>
-              <p className="font-medium text-gray-900">假勤</p>
-              <p className="text-sm text-gray-500">机器人</p>
-              <p className="text-xs text-gray-400">原「打卡」应用，实现高效考勤管理</p>
+              <p className="font-medium text-foreground">假勤</p>
+              <p className="text-sm text-muted-foreground">机器人</p>
+              <p className="text-xs text-muted-foreground/70">原「打卡」应用，实现高效考勤管理</p>
             </div>
           </div>
         </Card>
@@ -44,23 +44,23 @@ const SettingsPanel = ({ isVisible = true, onClose }: SettingsPanelProps) => {
         {/* 标签设置 */}
         <Card className="p-4">
           <div className="flex items-center justify-between mb-3">
-            <h4 className="font-medium text-gray-900">标签</h4>
-            <Button variant="ghost" size="sm" className="text-blue-600">
+            <h4 className="font-medium text-foreground">标签</h4>
+            <Button variant="ghost" size="sm" className="text-primary">
               添加标签
             </Button>
           </div>
           <div className="space-y-2">
             <label className="flex items-center space-x-2">
               <input type="checkbox" className="rounded" />
-              <span className="text-sm text-gray-700">消息免打扰</span>
+              <span className="text-sm text-foreground">消息免打扰</span>
             </label>
             <label className="flex items-center space-x-2">
               <input type="checkbox" className="rounded" />
-              <span className="text-sm text-gray-700">置顶会话</span>
+              <span className="text-sm text-foreground">置顶会话</span>
             </label>
             <label className="flex items-center space-x-2">
               <input type="checkbox" className="rounded" />
-              <span className="text-sm text-gray-700">添加到标记</span>
+              <span className="text-sm text-foreground">添加到标记</span>
             </label>
           </div>
         </Card>
@@ -69,7 +69,7 @@ const SettingsPanel = ({ isVisible = true, onClose }: SettingsPanelProps) => {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <span className="font-medium text-gray-900">翻译助手</span>
+              <span className="font-medium text-foreground">翻译助手</span>
             </div>
             <Button variant="ghost" size="sm">
               <HelpCircle className="h-4 w-4" />
@@ -79,15 +79,15 @@ const SettingsPanel = ({ isVisible = true, onClose }: SettingsPanelProps) => {
 
         {/* 清空聊天记录 */}
         <Card className="p-4">
-          <Button variant="ghost" className="w-full justify-start text-gray-700">
+          <Button variant="ghost" className="w-full justify-start text-foreground">
             <HelpCircle className="h-4 w-4 mr-2" />
             清空聊天记录
           </Button>
         </Card>
 
         {/* 举报 */}
-        <div className="pt-4 border-t border-gray-200">
-          <Button variant="ghost" className="w-full text-red-600 hover:text-red-700 hover:bg-red-50">
+        <div className="pt-4 border-t border-border">
+          <Button variant="ghost" className="w-full text-destructive hover:text-destructive hover:bg-destructive/10">
             举报
           </Button>
         </div>

@@ -65,21 +65,21 @@ const ChatArea = ({ selectedAgent = 1 }: ChatAreaProps) => {
   }
 
   return (
-    <div className="h-full bg-white flex flex-col">
+    <div className="h-full bg-background flex flex-col">
       {/* 对话消息列表 */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {/* 欢迎消息 */}
         {showWelcome && (
           <div className="flex justify-start">
             <div className="max-w-[70%] mr-auto">
-              <div className="p-3 rounded-lg bg-gray-100 text-gray-800">
+              <div className="p-3 rounded-lg bg-muted text-foreground">
                 <p className="text-sm whitespace-pre-wrap">{getWelcomeMessage()}</p>
               </div>
               <div className="flex items-center mt-1 space-x-2">
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-muted-foreground">
                   {getSenderName('assistant', selectedAgent)}
                 </span>
-                <span className="text-xs text-gray-400">刚刚</span>
+                <span className="text-xs text-muted-foreground/70">刚刚</span>
               </div>
             </div>
           </div>
@@ -91,27 +91,27 @@ const ChatArea = ({ selectedAgent = 1 }: ChatAreaProps) => {
             <div className={`max-w-[70%] ${message.role === 'assistant' ? 'mr-auto' : 'ml-auto'}`}>
               <div className={`p-3 rounded-lg ${
                 message.role === 'assistant'
-                  ? 'bg-gray-100 text-gray-800' 
-                  : 'bg-blue-600 text-white'
+                  ? 'bg-muted text-foreground' 
+                  : 'bg-primary text-primary-foreground'
               }`}>
                 <p className="text-sm whitespace-pre-wrap">
                   {message.content}
                   {/* 流式输出时显示光标 */}
                   {message.isStreaming && (
-                    <span className="inline-block w-2 h-4 ml-1 bg-gray-400 animate-pulse" />
+                    <span className="inline-block w-2 h-4 ml-1 bg-muted-foreground animate-pulse" />
                   )}
                 </p>
               </div>
               <div className="flex items-center mt-1 space-x-2">
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-muted-foreground">
                   {getSenderName(message.role, message.agentId)}
                 </span>
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-muted-foreground/70">
                   {formatTime(message.timestamp)}
                 </span>
                 {/* 显示流式状态 */}
                 {message.isStreaming && (
-                  <span className="text-xs text-blue-500 flex items-center">
+                  <span className="text-xs text-primary flex items-center">
                     <svg className="animate-spin w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>

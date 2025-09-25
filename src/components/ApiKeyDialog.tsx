@@ -70,10 +70,10 @@ const ApiKeyDialog = ({ isOpen, onClose }: ApiKeyDialogProps) => {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <Card className="w-full max-w-md mx-4 p-6">
         <div className="mb-4">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">
+          <h2 className="text-lg font-semibold text-foreground mb-2">
             配置智谱AI
           </h2>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-muted-foreground">
             配置您的智谱AI API Key以开始对话
           </p>
         </div>
@@ -81,7 +81,7 @@ const ApiKeyDialog = ({ isOpen, onClose }: ApiKeyDialogProps) => {
         <div className="space-y-4">
           {/* API Key输入 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               API Key
             </label>
             <Input
@@ -91,13 +91,13 @@ const ApiKeyDialog = ({ isOpen, onClose }: ApiKeyDialogProps) => {
               placeholder="请输入您的智谱AI API Key"
               className="w-full"
             />
-            <p className="mt-1 text-xs text-gray-500">
+            <p className="mt-1 text-xs text-muted-foreground">
               在 
               <a 
                 href="https://open.bigmodel.cn/usercenter/apikeys" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-blue-600 hover:text-blue-800 underline"
+                className="text-primary hover:text-primary/80 underline"
               >
                 智谱AI控制台
               </a> 
@@ -107,13 +107,13 @@ const ApiKeyDialog = ({ isOpen, onClose }: ApiKeyDialogProps) => {
 
           {/* 模型选择 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               选择模型
             </label>
             <select
               value={tempModel}
               onChange={(e) => setTempModel(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-background text-foreground"
             >
               {AVAILABLE_MODELS.map(model => (
                 <option key={model.id} value={model.id}>
@@ -124,9 +124,9 @@ const ApiKeyDialog = ({ isOpen, onClose }: ApiKeyDialogProps) => {
           </div>
 
           {/* 使用说明 */}
-          <div className="bg-blue-50 p-3 rounded-lg">
-            <h4 className="text-sm font-medium text-blue-800 mb-1">使用说明：</h4>
-            <ul className="text-xs text-blue-700 space-y-1">
+          <div className="bg-primary/10 p-3 rounded-lg">
+            <h4 className="text-sm font-medium text-primary mb-1">使用说明：</h4>
+            <ul className="text-xs text-primary space-y-1">
               <li>• 智谱AI提供免费的API额度供测试使用</li>
               <li>• API Key会安全存储在本地浏览器中</li>
               <li>• 支持实时流式对话体验</li>
@@ -147,7 +147,7 @@ const ApiKeyDialog = ({ isOpen, onClose }: ApiKeyDialogProps) => {
           </Button>
           <Button
             onClick={handleSave}
-            className="flex-1 bg-blue-600 hover:bg-blue-700"
+            className="flex-1 bg-primary hover:bg-primary/90"
             disabled={isLoading || !tempApiKey.trim()}
           >
             {isLoading ? (
