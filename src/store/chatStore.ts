@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { createZhipuChatStream } from '../lib/sse';
 import type { ChatMessage } from '../types/chat';
+import type { DataEyesConfig } from '../types/dataEyes';
 
 // 消息接口
 export interface Message {
@@ -28,6 +29,9 @@ export interface ChatState {
   // 错误处理
   error: string | null;
   
+  // DataEyes 专用配置
+  dataEyesConfig: DataEyesConfig;
+  
   // 操作方法
   setCurrentMessage: (message: string) => void;
   sendMessage: () => Promise<void>;
@@ -40,6 +44,11 @@ export interface ChatState {
   addMessage: (message: Omit<Message, 'id' | 'timestamp'>) => void;
   updateMessage: (id: string, updates: Partial<Message>) => void;
   clearAgentMessages: (agentId: number) => void;
+  
+  // DataEyes 专用操作
+  toggleDataEyesChat: () => void;
+  setDataEyesChatEnabled: (enabled: boolean) => void;
+  setDataEyesLayoutMode: (mode: 'chart-only' | 'chat-active') => void;
 }
 
 // 可用模型
@@ -82,6 +91,14 @@ export const useChatStore = create<ChatState>((set, get) => {
     selectedModel: 'glm-4',
     selectedAgent: 1,
     error: null,
+    
+    // DataEyes 初始配置
+    dataEyesConfig: {
+      chatEnabled: true,
+      isChatActive: false,
+      bubbleVisible: true,
+      layoutMode: 'chart-only'
+    },
 
     // 设置当前输入的消息
     setCurrentMessage: (message: string) => {
@@ -245,13 +262,6 @@ export const useChatStore = create<ChatState>((set, get) => {
       set({ selectedAgent: agentId });
     },
 
-    // 清空指定Agent的消息
-    clearAgentMessages: (agentId: number) => {
-      const state = get();
-      const filteredMessages = state.messages.filter(msg => msg.agentId !== agentId);
-      set({ messages: filteredMessages });
-    },
-
     // 设置错误
     setError: (error: string | null) => {
       set({ error });
@@ -275,6 +285,53 @@ export const useChatStore = create<ChatState>((set, get) => {
         msg.id === id ? { ...msg, ...updates } : msg
       );
       set({ messages: updatedMessages });
+    },
+
+    // 清空指定Agent的消息
+    clearAgentMessages: (agentId: number) => {
+      const state = get();
+      const filteredMessages = state.messages.filter(msg => msg.agentId !== agentId);
+      set({ messages: filteredMessages });
+    },
+    
+    // DataEyes 专用操作方法
+    toggleDataEyesChat: () => {
+      const state = get();
+      const newChatActive = !state.dataEyesConfig.isChatActive;
+      set({
+        dataEyesConfig: {
+          ...state.dataEyesConfig,
+          isChatActive: newChatActive,
+          bubbleVisible: !newChatActive,
+          layoutMode: newChatActive ? 'chat-active' : 'chart-only'
+        }
+      });
+    },
+
+    setDataEyesChatEnabled: (enabled: boolean) => {
+      const state = get();
+      set({
+        dataEyesConfig: {
+          ...state.dataEyesConfig,
+          chatEnabled: enabled,
+          // 如果禁用聊天，也要关闭聊天状态
+          isChatActive: enabled ? state.dataEyesConfig.isChatActive : false,
+          bubbleVisible: enabled,
+          layoutMode: enabled && state.dataEyesConfig.isChatActive ? 'chat-active' : 'chart-only'
+        }
+      });
+    },
+
+    setDataEyesLayoutMode: (mode: 'chart-only' | 'chat-active') => {
+      const state = get();
+      set({
+        dataEyesConfig: {
+          ...state.dataEyesConfig,
+          layoutMode: mode,
+          isChatActive: mode === 'chat-active',
+          bubbleVisible: mode === 'chart-only'
+        }
+      });
     },
   };
 });

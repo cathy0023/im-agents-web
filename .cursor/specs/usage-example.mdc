@@ -1,0 +1,761 @@
+---
+description: IM Agents Web 的 SDC 规则体系实际使用示例
+globs: ["**/*.md"]
+alwaysApply: false
+---
+# SDC 使用示例 - IM Agents Web
+
+## 概述
+
+本文档展示如何在 IM Agents Web 项目中使用 SDC（Spec-Driven Coding）规则体系，通过具体的 AI 智能助手功能开发案例，演示完整的开发流程。
+
+## 示例：开发流式对话功能
+
+### 1. 创建项目规范结构
+
+首先，在项目根目录创建 SDC 规范目录结构：
+
+```bash
+# 创建 specsDocs 目录结构
+mkdir -p .specsDocs/specs/streaming-chat
+mkdir -p .specsDocs/hooks
+mkdir -p .specsDocs/steering
+
+# 创建规范文档
+touch .specsDocs/specs/streaming-chat/requirements.md
+touch .specsDocs/specs/streaming-chat/design.md
+touch .specsDocs/specs/streaming-chat/tasks.md
+touch .specsDocs/hooks/config.yaml
+touch .specsDocs/steering/product.md
+touch .specsDocs/steering/tech.md
+```
+
+### 2. 编写产品规范
+
+**`.specsDocs/steering/product.md`**：
+```markdown
+# IM Agents Web 产品规范
+
+## 产品愿景
+构建一个现代化的AI智能助手Web应用，为用户提供多场景、多角色的AI对话服务，通过流式交互和智能化体验，让AI助手成为用户工作和学习的得力伙伴。
+
+## 核心功能模块
+
+### 模块 1：流式对话体验
+- **功能描述**：实时流式输出AI回复，支持中断和重新生成
+- **业务价值**：提供自然流畅的对话体验，减少等待时间
+- **优先级**：高
+
+## 产品原则
+1. **隐私优先**：用户数据本地存储，不上传到第三方服务器
+2. **体验至上**：流畅的交互体验，直观的界面设计
+3. **开放兼容**：支持多种AI服务，不绑定特定供应商
+```
+
+### 3. 编写技术规范
+
+**`.specsDocs/steering/tech.md`**：
+```markdown
+# IM Agents Web 技术规范
+
+## 技术栈
+
+### 前端技术栈
+- **框架**：React 19.1.1
+- **构建工具**：Vite 7.1.7
+- **语言**：TypeScript 5.8.3
+- **UI 组件库**：shadcn UI（基于 Radix UI）
+
+### 状态和数据管理
+- **状态管理**：zustand 5.0.8
+- **数据获取**：Axios 1.12.2
+- **数据持久化**：zustand/middleware/persist
+
+### API 和服务集成
+- **API 协议**：RESTful API / Server-Sent Events
+- **认证方式**：Bearer Token
+- **AI 服务**：智谱AI GLM系列模型
+
+## 代码质量标准
+- **TypeScript 严格模式**：使用现代TypeScript语法
+- **shadcn UI 规范**：严格使用语义化颜色，支持主题切换
+- **性能基准**：首屏加载时间 < 1s，AI响应首字节 < 2s
+```
+
+### 4. 编写功能需求规范
+
+**`.specsDocs/specs/streaming-chat/requirements.md`**：
+```markdown
+# 流式对话功能需求规范
+
+## 用户故事
+作为用户，我希望能够与AI助手进行实时的流式对话，以便获得自然流畅的交互体验。
+
+## 功能需求
+
+### 需求 1：流式消息输出
+**WHEN** 用户发送消息给AI助手
+**IF** API密钥有效且消息内容不为空
+**THEN** 系统立即显示用户消息
+**AND** 开始流式接收AI回复
+**AND** 实时显示AI回复内容逐字输出
+**AND** 支持中断正在进行的回复
+
+### 需求 2：多Agent切换
+**WHEN** 用户切换到不同的AI助手
+**IF** 当前没有正在进行的对话
+**THEN** 系统切换到新的Agent
+**AND** 保持各Agent的对话历史独立
+**AND** 应用对应的系统提示词
+
+### 需求 3：主题模式支持
+**WHEN** 用户切换主题模式
+**IF** 界面已完全加载
+**THEN** 系统立即切换主题
+**AND** 所有组件颜色正确更新
+**AND** 用户偏好保存到本地
+
+## 非功能需求
+- 性能要求：页面加载时间 < 1秒，AI首字节响应时间 < 2秒
+- 安全要求：API密钥本地加密存储，对话内容仅本地保存
+- 可用性要求：99.9% 界面可用性，支持网络中断恢复
+- 兼容性要求：支持现代浏览器，移动端响应式适配
+- 用户体验：流式输出流畅无卡顿，主题切换无闪烁
+
+## 验收标准
+- [ ] 流式对话输出正常
+- [ ] 多Agent切换功能完美
+- [ ] 主题切换功能稳定
+- [ ] 对话历史独立管理
+- [ ] API密钥安全存储
+- [ ] 移动端响应式正常
+- [ ] 网络异常处理完善
+```
+
+### 5. 编写技术设计规范
+
+**`.specsDocs/specs/conversation-analysis/design.md`**：
+```markdown
+# 对话智能分析技术设计
+
+## 系统架构
+
+### 整体架构图
+```mermaid
+graph TD
+    A[销售人员] --> B[Vue.js 前端]
+    B --> C[音频上传组件]
+    C --> D[文件上传 API]
+    D --> E[AI 分析服务]
+    E --> F[分析结果 API]
+    F --> G[数据库]
+    B --> H[分析结果展示]
+    H --> F
+```
+
+## Vue.js 组件设计
+
+### 对话分析结果组件
+```vue
+<!-- src/components/analysis/ConversationScore.vue -->
+<template>
+  <div class="conversation-score">
+    <el-card class="score-card">
+      <div slot="header" class="clearfix">
+        <span>对话评分</span>
+        <el-button 
+          style="float: right; padding: 3px 0" 
+          type="text"
+          @click="exportReport"
+        >
+          导出报告
+        </el-button>
+      </div>
+      
+      <div v-if="isLoading" class="loading">
+        <el-loading />
+        <p>AI正在分析中...</p>
+      </div>
+      
+      <div v-else class="score-content">
+        <div class="overall-score">
+          <h3>总体评分</h3>
+          <div class="score-value">{{ analysisResult.overallScore || 0 }}</div>
+          <div class="score-level">{{ getScoreLevel(analysisResult.overallScore) }}</div>
+        </div>
+        
+        <div class="dimension-scores">
+          <h4>各维度评分</h4>
+          <el-row :gutter="20">
+            <el-col 
+              v-for="dimension in analysisResult.dimensions" 
+              :key="dimension.name"
+              :span="8"
+            >
+              <div class="dimension-item">
+                <span class="dimension-name">{{ dimension.name }}</span>
+                <el-progress 
+                  :percentage="dimension.score" 
+                  :color="getProgressColor(dimension.score)"
+                />
+              </div>
+            </el-col>
+          </el-row>
+        </div>
+      </div>
+    </el-card>
+  </div>
+</template>
+
+<script>
+import { mapState, mapActions } from 'vuex'
+
+export default {
+  name: 'ConversationScore',
+  
+  props: {
+    conversationId: {
+      type: String,
+      required: true
+    }
+  },
+  
+  data() {
+    return {
+      isLoading: false
+    }
+  },
+  
+  computed: {
+    ...mapState('analysis', ['analysisResult'])
+  },
+  
+  async created() {
+    await this.loadAnalysisResult()
+  },
+  
+  methods: {
+    ...mapActions('analysis', ['fetchAnalysisResult', 'exportAnalysisReport']),
+    
+    async loadAnalysisResult() {
+      try {
+        this.isLoading = true
+        await this.fetchAnalysisResult(this.conversationId)
+      } catch (error) {
+        this.$message.error('加载分析结果失败')
+      } finally {
+        this.isLoading = false
+      }
+    },
+    
+    getScoreLevel(score) {
+      if (score >= 90) return '优秀'
+      if (score >= 80) return '良好'
+      if (score >= 70) return '一般'
+      return '需改进'
+    },
+    
+    getProgressColor(score) {
+      if (score >= 80) return '#67c23a'
+      if (score >= 60) return '#e6a23c'
+      return '#f56c6c'
+    },
+    
+    async exportReport() {
+      try {
+        await this.exportAnalysisReport(this.conversationId)
+        this.$message.success('报告导出成功')
+      } catch (error) {
+        this.$message.error('报告导出失败')
+      }
+    }
+  }
+}
+</script>
+
+<style lang="scss" scoped>
+.conversation-score {
+  .score-card {
+    margin-bottom: 20px;
+  }
+  
+  .loading {
+    text-align: center;
+    padding: 40px;
+    color: $text-secondary;
+  }
+  
+  .overall-score {
+    text-align: center;
+    margin-bottom: 30px;
+    
+    .score-value {
+      font-size: 48px;
+      font-weight: bold;
+      color: $color-primary;
+      margin: 10px 0;
+    }
+    
+    .score-level {
+      font-size: 16px;
+      color: $text-secondary;
+    }
+  }
+  
+  .dimension-scores {
+    .dimension-item {
+      margin-bottom: 15px;
+      
+      .dimension-name {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+      }
+    }
+  }
+}
+</style>
+```
+
+## API 接口设计
+
+### 对话分析结果接口
+```javascript
+// src/api/analysis.js
+import request from '@/utils/request'
+
+/**
+ * 获取对话分析结果
+ * @param {string} conversationId 对话ID
+ * @returns {Promise} 分析结果
+ */
+export function getAnalysisResult(conversationId) {
+  return request({
+    url: `/api/conversations/${conversationId}/analysis`,
+    method: 'get'
+  })
+}
+
+/**
+ * 导出分析报告
+ * @param {string} conversationId 对话ID
+ * @param {string} format 导出格式 (pdf|excel)
+ * @returns {Promise} 导出结果
+ */
+export function exportAnalysisReport(conversationId, format = 'pdf') {
+  return request({
+    url: `/api/conversations/${conversationId}/analysis/export`,
+    method: 'post',
+    data: { format },
+    responseType: 'blob'
+  })
+}
+
+/**
+ * 上传音频文件进行分析
+ * @param {FormData} formData 包含音频文件的表单数据
+ * @param {Function} onProgress 上传进度回调
+ * @returns {Promise} 上传结果
+ */
+export function uploadAudioForAnalysis(formData, onProgress) {
+  return request({
+    url: '/api/conversations/upload',
+    method: 'post',
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    },
+    onUploadProgress: (progressEvent) => {
+      if (onProgress) {
+        const percentCompleted = Math.round(
+          (progressEvent.loaded * 100) / progressEvent.total
+        )
+        onProgress(percentCompleted)
+      }
+    }
+  })
+}
+```
+
+### Vuex 状态管理
+```javascript
+// src/store/modules/analysis.js
+import { getAnalysisResult, exportAnalysisReport, uploadAudioForAnalysis } from '@/api/analysis'
+
+const state = {
+  analysisResult: null,
+  uploadProgress: 0,
+  isAnalyzing: false
+}
+
+const mutations = {
+  SET_ANALYSIS_RESULT(state, result) {
+    state.analysisResult = result
+  },
+  
+  SET_UPLOAD_PROGRESS(state, progress) {
+    state.uploadProgress = progress
+  },
+  
+  SET_ANALYZING_STATUS(state, status) {
+    state.isAnalyzing = status
+  }
+}
+
+const actions = {
+  // 获取分析结果
+  async fetchAnalysisResult({ commit }, conversationId) {
+    try {
+      const response = await getAnalysisResult(conversationId)
+      commit('SET_ANALYSIS_RESULT', response.data)
+      return response.data
+    } catch (error) {
+      console.error('获取分析结果失败:', error)
+      throw error
+    }
+  },
+  
+  // 上传音频文件
+  async uploadAudio({ commit }, { file, conversationData }) {
+    try {
+      commit('SET_UPLOAD_PROGRESS', 0)
+      commit('SET_ANALYZING_STATUS', true)
+      
+      const formData = new FormData()
+      formData.append('audio', file)
+      formData.append('conversationData', JSON.stringify(conversationData))
+      
+      const response = await uploadAudioForAnalysis(formData, (progress) => {
+        commit('SET_UPLOAD_PROGRESS', progress)
+      })
+      
+      return response.data
+    } catch (error) {
+      console.error('音频上传失败:', error)
+      throw error
+    } finally {
+      commit('SET_ANALYZING_STATUS', false)
+    }
+  },
+  
+  // 导出分析报告
+  async exportAnalysisReport({ state }, conversationId) {
+    try {
+      const response = await exportAnalysisReport(conversationId)
+      
+      // 创建下载链接
+      const blob = new Blob([response.data], { type: 'application/pdf' })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `对话分析报告_${conversationId}.pdf`
+      link.click()
+      window.URL.revokeObjectURL(url)
+      
+      return true
+    } catch (error) {
+      console.error('报告导出失败:', error)
+      throw error
+    }
+  }
+}
+
+const getters = {
+  hasAnalysisResult: state => !!state.analysisResult,
+  
+  overallScore: state => {
+    return state.analysisResult ? state.analysisResult.overallScore : 0
+  },
+  
+  isUploading: state => state.uploadProgress > 0 && state.uploadProgress < 100
+}
+
+export default {
+  namespaced: true,
+  state,
+  mutations,
+  actions,
+  getters
+}
+```
+
+## 工具函数设计
+
+### 音频处理工具
+```javascript
+// src/utils/audio.js
+
+/**
+ * 验证音频文件格式
+ * @param {File} file 音频文件
+ * @returns {boolean} 是否有效
+ */
+export function validateAudioFile(file) {
+  const allowedTypes = ['audio/mp3', 'audio/wav', 'audio/m4a', 'audio/mpeg']
+  const maxSize = 100 * 1024 * 1024 // 100MB
+  
+  if (!allowedTypes.includes(file.type)) {
+    throw new Error('不支持的音频格式，请上传 MP3、WAV 或 M4A 格式')
+  }
+  
+  if (file.size > maxSize) {
+    throw new Error('文件大小超过限制，请上传小于 100MB 的文件')
+  }
+  
+  return true
+}
+
+/**
+ * 获取音频时长
+ * @param {File} file 音频文件
+ * @returns {Promise<number>} 音频时长（秒）
+ */
+export function getAudioDuration(file) {
+  return new Promise((resolve, reject) => {
+    const audio = new Audio()
+    const url = URL.createObjectURL(file)
+    
+    audio.addEventListener('loadedmetadata', () => {
+      URL.revokeObjectURL(url)
+      resolve(audio.duration)
+    })
+    
+    audio.addEventListener('error', () => {
+      URL.revokeObjectURL(url)
+      reject(new Error('无法读取音频文件'))
+    })
+    
+    audio.src = url
+  })
+}
+
+/**
+ * 格式化音频时长显示
+ * @param {number} seconds 秒数
+ * @returns {string} 格式化的时长字符串
+ */
+export function formatDuration(seconds) {
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  const secs = Math.floor(seconds % 60)
+  
+  if (hours > 0) {
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+  }
+  
+  return `${minutes}:${secs.toString().padStart(2, '0')}`
+}
+```
+
+## 性能优化设计
+
+### 前端优化策略
+- Vuex 状态缓存分析结果（避免重复请求）
+- 音频文件分片上传（大文件处理）
+- 组件懒加载（按需加载分析组件）
+
+### 数据处理优化
+- 音频预处理压缩（减少上传时间）
+- 分析结果分页显示（大量数据优化）
+- 实时进度反馈（提升用户体验）
+```
+
+### 6. 编写任务分解规范
+
+**`.specsDocs/specs/conversation-analysis/tasks.md`**：
+```markdown
+# 对话智能分析功能任务分解
+
+## 任务概览
+- 总任务数：8 个
+- 预计工时：24 小时
+- 优先级：高
+
+## 任务列表
+
+### 阶段 1：基础组件开发
+- [ ] **任务 1.1**：音频上传组件
+  - 描述：开发支持拖拽上传的音频文件上传组件
+  - 工时：3 小时
+  - 依赖：无
+  - 验收标准：支持多种音频格式，显示上传进度
+
+- [ ] **任务 1.2**：文件验证工具
+  - 描述：实现音频文件格式和大小验证功能
+  - 工时：2 小时
+  - 依赖：任务 1.1
+  - 验收标准：正确验证音频格式，提供友好错误提示
+
+### 阶段 2：API 集成
+- [ ] **任务 2.1**：音频上传 API 调用
+  - 描述：实现与后端音频上传接口的集成
+  - 工时：3 小时
+  - 依赖：任务 1.2
+  - 验收标准：API 调用成功，支持上传进度显示
+
+- [ ] **任务 2.2**：分析结果 API 调用
+  - 描述：实现获取和展示分析结果的接口调用
+  - 工时：2 小时
+  - 依赖：任务 2.1
+  - 验收标准：正确获取分析数据，错误处理完善
+
+### 阶段 3：分析结果展示
+- [ ] **任务 3.1**：评分展示组件
+  - 描述：开发对话评分和各维度得分的展示组件
+  - 工时：4 小时
+  - 依赖：任务 2.2
+  - 验收标准：美观的评分展示，支持动画效果
+
+- [ ] **任务 3.2**：分析建议组件
+  - 描述：开发改进建议和最佳实践展示组件
+  - 工时：3 小时
+  - 依赖：任务 3.1
+  - 验收标准：清晰的建议展示，支持收藏功能
+
+### 阶段 4：高级功能
+- [ ] **任务 4.1**：报告导出功能
+  - 描述：实现分析报告的 PDF 和 Excel 导出
+  - 工时：4 小时
+  - 依赖：任务 3.2
+  - 验收标准：导出功能正常，报告格式美观
+
+- [ ] **任务 4.2**：状态管理和优化
+  - 描述：完善 Vuex 状态管理，优化组件性能
+  - 工时：3 小时
+  - 依赖：任务 4.1
+  - 验收标准：状态管理完善，页面响应流畅
+
+## 风险识别
+- **风险 1**：大音频文件上传超时
+  - 影响：可能导致上传失败
+  - 缓解措施：实现分片上传，增加重试机制
+- **风险 2**：AI分析服务不稳定
+  - 影响：可能导致分析结果延迟或失败
+  - 缓解措施：增加错误处理，提供重新分析功能
+```
+
+### 7. 配置 Hooks
+
+**`.specsDocs/hooks/config.yaml`**：
+```yaml
+hooks:
+  - name: "对话分析组件测试钩子"
+    trigger:
+      type: "fileEdited"
+      pattern: "src/components/analysis/**/*.vue"
+      exclude: ["**/*.spec.js"]
+    action:
+      type: "command"
+      command: "npm run test:unit -- --testPathPattern=analysis"
+      description: "当对话分析组件被编辑时，自动运行相关测试"
+    
+  - name: "API 接口文档更新钩子"
+    trigger:
+      type: "fileEdited"
+      pattern: "src/api/analysis.js"
+    action:
+      type: "ai_prompt"
+      prompt: |
+        检查修改的分析 API 文件，如果发现接口变更：
+        1. 更新对应的接口文档和参数说明
+        2. 检查是否需要更新 Vuex actions
+        3. 验证文件上传的性能影响
+        4. 提醒开发者更新相关测试用例
+      description: "当分析 API 被编辑时，自动检查和更新相关文档"
+    
+  - name: "Vuex 状态管理检查钩子"
+    trigger:
+      type: "fileEdited"
+      pattern: "src/store/modules/analysis.js"
+    action:
+      type: "ai_prompt"
+      prompt: |
+        检查 Vuex 分析模块的变更：
+        1. 验证 mutations 和 actions 的命名规范
+        2. 检查状态更新逻辑是否正确
+        3. 确保错误处理完善
+        4. 提醒更新相关组件的调用代码
+      description: "当分析模块状态管理被修改时，自动进行规范检查"
+```
+
+### 8. 实际开发流程演示
+
+#### 步骤 1：需求分析（已完成）
+✅ 与 AI 共同分析对话智能分析需求
+✅ 使用 EARS 格式编写 `requirements.md`
+✅ 明确功能边界和验收标准
+
+#### 步骤 2：技术设计（已完成）
+✅ 设计 Vue.js 组件架构方案
+✅ 编写 `design.md`，包含组件设计、API 调用、状态管理
+✅ 确定 Axios 和 Vuex 的使用方式
+
+#### 步骤 3：任务分解（已完成）
+✅ 将前后端功能拆分为具体任务
+✅ 编写 `tasks.md`，考虑音频处理的特殊需求
+✅ 规划API集成和组件开发顺序
+
+#### 步骤 4：开始编码实现
+
+现在可以开始按照任务清单进行开发：
+
+```bash
+# 1. 创建组件文件
+mkdir -p src/components/analysis
+touch src/components/analysis/ConversationScore.vue
+touch src/components/analysis/AudioUploader.vue
+
+# 2. 创建 API 接口文件
+touch src/api/analysis.js
+
+# 3. 创建 Vuex 状态管理模块
+mkdir -p src/store/modules
+touch src/store/modules/analysis.js
+
+# 4. 创建工具函数
+mkdir -p src/utils
+touch src/utils/audio.js
+
+# 5. 开发 Vue 组件
+# 编辑 src/components/analysis/ConversationScore.vue
+
+# 6. 编写测试用例
+mkdir -p src/components/analysis/__tests__
+touch src/components/analysis/__tests__/ConversationScore.spec.js
+```
+
+#### 步骤 5：利用 Hooks 自动化
+
+当编辑文件时，Hooks 会自动：
+- 运行相关的组件测试
+- 检查 API 文档是否需要更新
+- 验证数据查询性能
+- 提醒更新类型定义
+
+#### 步骤 6：验证和优化
+
+```bash
+# 运行所有测试
+npm run test:unit
+
+# 检查 JavaScript 语法
+npm run lint
+
+# 构建项目验证
+npm run build
+
+# 格式化代码
+npm run prettier
+```
+
+## 总结
+
+通过这个流式对话功能的完整开发案例，我们可以看到 IM Agents Web 的 SDC 规则体系如何发挥作用：
+
+1. **规范驱动**：通过明确的AI助手业务需求规范指导开发
+2. **技术一致性**：遵循 React + TypeScript + shadcn UI 最佳实践
+3. **自动化协作**：通过 Hooks 减少重复工作，确保代码质量
+4. **性能优化**：在设计阶段就考虑流式响应的性能要求
+5. **用户体验**：始终遵循主题切换和响应式设计要求
+
+这套规则体系特别适合AI智能助手相关的项目，能够显著提升开发效率和用户体验质量。

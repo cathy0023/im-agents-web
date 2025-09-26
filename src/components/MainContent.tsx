@@ -1,11 +1,10 @@
-import { PanelLeft, Settings, Key } from 'lucide-react'
+import { PanelLeft, Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import ChatArea from './ChatArea'
 import ChartArea from './ChartArea'
 import SettingsPanel from './SettingsPanel'
 import ConversationList from './ConversationList'
-import ApiKeyDialog from './ApiKeyDialog'
 import FooterBar from './FooterBar'
 import { useChatStore } from '../store/chatStore'
 // import { useConversationStore } from '../store/conversationStore' // 暂时未直接使用
@@ -28,16 +27,7 @@ const MainContent = ({
 }: MainContentProps) => {
   const [isSettingsPanelVisible, setIsSettingsPanelVisible] = useState(false)
   const [isConversationListCollapsed, setIsConversationListCollapsed] = useState(false)
-  const [isApiKeyDialogOpen, setIsApiKeyDialogOpen] = useState(false)
-  
-  const { apiKey, clearAgentMessages } = useChatStore()
-
-  // 检查是否需要显示API Key配置
-  useEffect(() => {
-    if (!apiKey) {
-      setIsApiKeyDialogOpen(true)
-    }
-  }, [apiKey])
+  const { clearAgentMessages } = useChatStore()
 
   const handleToggleConversationList = () => {
     setIsConversationListCollapsed(!isConversationListCollapsed)
@@ -55,9 +45,6 @@ const MainContent = ({
     }
   }
 
-  const handleApiKeyConfig = () => {
-    setIsApiKeyDialogOpen(true)
-  }
 
   const handleClearMessages = () => {
     // 只清空当前选中的Agent的消息
@@ -160,12 +147,13 @@ const MainContent = ({
             selectedConversationId={selectedConversationId}
             onConversationChange={handleConversationChange}
             isCollapsed={isConversationListCollapsed}
+            onToggleCollapse={handleToggleConversationList}
           />
           
           {/* 右侧主要内容区域 */}
           <div className="flex-1 flex flex-col h-full bg-background">
             {/* HeaderBar */}
-            <div className="h-12 bg-background border-b border-border flex items-center justify-between px-4">
+            {/* <div className="h-12 bg-background border-b border-border flex items-center justify-between px-4">
               <div className="flex items-center space-x-3">
                 <Button 
                   variant="ghost" 
@@ -177,22 +165,8 @@ const MainContent = ({
                   <PanelLeft className="h-4 w-4" />
                 </Button>
                 <h2 className="text-lg font-semibold text-foreground">{getAgentTitle()}</h2>
-                {!apiKey && (
-                  <span className="px-2 py-1 text-xs bg-destructive/10 text-destructive rounded">
-                    需要配置API Key
-                  </span>
-                )}
               </div>
               <div className="flex items-center space-x-2">
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  onClick={handleApiKeyConfig}
-                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                  title="配置API Key"
-                >
-                  <Key className="h-4 w-4" />
-                </Button>
                 <Button 
                   variant="ghost" 
                   size="icon"
@@ -212,7 +186,7 @@ const MainContent = ({
                   <Settings className="h-4 w-4" />
                 </Button>
               </div>
-            </div>
+            </div> */}
             
             {/* 主要内容区域 */}
             <div className="flex-1 flex overflow-hidden">
@@ -231,65 +205,18 @@ const MainContent = ({
           </div>
         </div>
         
-        {/* API Key配置弹窗 */}
-        <ApiKeyDialog 
-          isOpen={isApiKeyDialogOpen}
-          onClose={() => setIsApiKeyDialogOpen(false)}
-        />
       </>
     )
   }
 
-  // DataEyes模式：不包含AgentList
+  // DataEyes模式：不包含AgentList，直接显示内容
   return (
     <>
       <div className="flex-1 flex flex-col h-full bg-background">
-        {/* HeaderBar */}
-        <div className="h-12 bg-background border-b border-border flex items-center justify-between px-4">
-          <div className="flex items-center space-x-3">
-            <h2 className="text-lg font-semibold text-foreground">DataEyes分析</h2>
-            {!apiKey && (
-              <span className="px-2 py-1 text-xs bg-destructive/10 text-destructive rounded">
-                需要配置API Key
-              </span>
-            )}
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={handleApiKeyConfig}
-              className="h-8 w-8 text-muted-foreground hover:text-foreground"
-              title="配置API Key"
-            >
-              <Key className="h-4 w-4" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={handleClearMessages}
-              className="h-8 w-8 text-muted-foreground hover:text-foreground"
-              title="清空对话"
-            >
-              🗑️
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => setIsSettingsPanelVisible(!isSettingsPanelVisible)}
-              className="h-8 w-8 text-muted-foreground hover:text-foreground"
-              title="设置"
-            >
-              <Settings className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-        
-        {/* 主要内容区域 */}
+        {/* 主要内容区域 - 直接显示DataEyes内容，无header */}
         <div className="flex-1 flex overflow-hidden">
-          {/* 中间内容区域 */}
+          {/* DataEyes内容区域 */}
           <div className="flex-1 flex flex-col">
-            {/* DataEyes内容区域 */}
             {getContentLayout()}
           </div>
           
@@ -301,11 +228,6 @@ const MainContent = ({
         </div>
       </div>
       
-      {/* API Key配置弹窗 */}
-      <ApiKeyDialog 
-        isOpen={isApiKeyDialogOpen}
-        onClose={() => setIsApiKeyDialogOpen(false)}
-      />
     </>
   )
 }

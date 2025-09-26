@@ -1,0 +1,496 @@
+# DataEyes布局动画与过渡效果规范
+
+## 🎬 动画设计理念
+
+### 设计原则
+1. **自然流畅**: 模拟物理世界的运动规律，避免突兀的切换
+2. **功能导向**: 动画服务于用户理解布局变化，不是装饰
+3. **性能优先**: 保证60fps流畅度，避免影响数据展示性能
+4. **可访问性**: 支持减少动画偏好设置
+
+### 动画时长标准
+```typescript
+const ANIMATION_DURATIONS = {
+  // 快速反馈 - 按钮点击、悬停状态
+  instant: 100,   // 100ms
+  fast: 200,      // 200ms
+  
+  // 标准过渡 - 布局切换、组件进出
+  normal: 300,    // 300ms
+  
+  // 慢速过渡 - 复杂布局变化
+  slow: 500,      // 500ms
+  
+  // 延迟 - 错开动画时机
+  delay: 100,     // 100ms
+  stagger: 50,    // 50ms (多元素依次动画)
+}
+```
+
+## 🔄 聊天气泡动画序列
+
+### 1. 默认状态动画
+```css
+/* 气泡入场动画 */
+@keyframes bubbleEnter {
+  0% {
+    transform: scale(0) translateY(20px);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.1) translateY(-2px);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* 脉动提示动画 */
+@keyframes bubblePulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(var(--primary), 0.4);
+  }
+  50% {
+    transform: scale(1.02);
+    box-shadow: 0 0 0 8px rgba(var(--primary), 0);
+  }
+}
+```
+
+### 2. 悬停交互动画
+```css
+/* 悬停状态 */
+.chat-bubble:hover {
+  transform: scale(1.05) translateY(-2px);
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* 点击反馈 */
+.chat-bubble:active {
+  transform: scale(0.95);
+  transition: all 100ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+```
+
+### 3. 消失动画
+```css
+@keyframes bubbleExit {
+  0% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(0.8) rotate(-10deg);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(0) rotate(-20deg);
+    opacity: 0;
+  }
+}
+```
+
+## 📐 布局切换动画序列
+
+### 时序图
+```
+Timeline (300ms total):
+0ms    ├─ 气泡退出动画开始 (100ms)
+100ms  ├─ ChatArea滑入开始 (300ms)
+       ├─ ChartArea宽度调整开始 (300ms)  
+150ms  ├─ MessageInput升起开始 (250ms)
+400ms  └─ 所有动画完成
+```
+
+### 1. ChatArea滑入动画
+```typescript
+// Framer Motion变体
+const chatAreaVariants = {
+  hidden: {
+    x: '-100%',
+    opacity: 0,
+    transition: {
+      duration: 0,
+    }
+  },
+  visible: {
+    x: 0,
+    opacity: 1,
+    transition: {
+      duration: 0.3,
+      ease: [0.25, 0.46, 0.45, 0.94], // easeOutQuart
+      delay: 0.1
+    }
+  },
+  exit: {
+    x: '-100%',
+    opacity: 0,
+    transition: {
+      duration: 0.25,
+      ease: [0.55, 0.06, 0.68, 0.19], // easeInQuart
+    }
+  }
+}
+```
+
+### 2. ChartArea自适应动画
+```typescript
+const chartAreaVariants = {
+  fullWidth: {
+    width: '100%',
+    transition: {
+      duration: 0.3,
+      ease: [0.25, 0.46, 0.45, 0.94],
+    }
+  },
+  halfWidth: {
+    width: '50%',
+    transition: {
+      duration: 0.3,
+      ease: [0.25, 0.46, 0.45, 0.94],
+      delay: 0.1
+    }
+  }
+}
+```
+
+### 3. MessageInput升起动画
+```typescript
+const inputAreaVariants = {
+  hidden: {
+    y: 50,
+    opacity: 0,
+    transition: {
+      duration: 0
+    }
+  },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: {
+      duration: 0.25,
+      ease: [0.25, 0.46, 0.45, 0.94],
+      delay: 0.15
+    }
+  },
+  exit: {
+    y: 30,
+    opacity: 0,
+    transition: {
+      duration: 0.2,
+      ease: [0.55, 0.06, 0.68, 0.19],
+    }
+  }
+}
+```
+
+## 📱 响应式动画适配
+
+### 桌面端 (>1024px) - 完整动画
+```typescript
+const desktopAnimations = {
+  chatBubble: {
+    entrance: 'bubbleEnter 400ms ease-out',
+    pulse: 'bubblePulse 2s ease-in-out infinite',
+    exit: 'bubbleExit 200ms ease-in',
+    position: 'bottom-left' // 默认左下角位置
+  },
+  layout: {
+    chatSlide: '300ms cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+    chartResize: '300ms cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+    inputRise: '250ms cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+  }
+}
+```
+
+### 平板端 (768px-1024px) - 简化动画
+```typescript
+const tabletAnimations = {
+  chatBubble: {
+    entrance: 'bubbleEnter 300ms ease-out',
+    pulse: 'none', // 禁用脉动
+    exit: 'bubbleExit 150ms ease-in'
+  },
+  layout: {
+    chatSlide: '250ms ease-out',
+    chartResize: '250ms ease-out',
+    inputRise: '200ms ease-out'
+  }
+}
+```
+
+### 移动端 (<768px) - 最小化动画
+```typescript
+const mobileAnimations = {
+  chatBubble: {
+    entrance: 'none', // 直接显示
+    pulse: 'none',
+    exit: 'fadeOut 100ms ease-in'
+  },
+  layout: {
+    // 使用transform3d优化性能
+    chatSlide: 'transform 200ms ease-out',
+    chartResize: 'none', // 立即切换
+    inputRise: 'transform 150ms ease-out'
+  }
+}
+```
+
+## ⚡ 性能优化策略
+
+### 1. GPU加速
+```css
+/* 强制GPU加速 */
+.chat-area-container,
+.chart-area-container,
+.input-area-container {
+  transform: translateZ(0);
+  will-change: transform, opacity;
+}
+
+/* 动画期间启用 */
+.animating {
+  will-change: transform, opacity, width;
+}
+
+/* 动画结束后移除 */
+.animation-complete {
+  will-change: auto;
+}
+```
+
+### 2. 避免重排重绘
+```typescript
+// 使用transform代替改变width/height
+const optimizedChartResize = {
+  // ❌ 触发重排
+  // width: '50%'
+  
+  // ✅ 使用transform
+  transform: 'scaleX(0.5)',
+  transformOrigin: 'left center'
+}
+```
+
+### 3. 动画节流
+```typescript
+// 防抖处理快速点击
+const useThrottledToggle = () => {
+  const [isAnimating, setIsAnimating] = useState(false)
+  
+  const throttledToggle = useCallback(
+    throttle(() => {
+      if (!isAnimating) {
+        setIsAnimating(true)
+        toggleChatMode()
+        setTimeout(() => setIsAnimating(false), 400)
+      }
+    }, 500),
+    [isAnimating]
+  )
+  
+  return throttledToggle
+}
+```
+
+## 🎛️ 动画控制系统
+
+### 1. 动画状态管理
+```typescript
+interface AnimationState {
+  // 当前动画状态
+  phase: 'idle' | 'entering' | 'exiting' | 'transitioning'
+  
+  // 动画进度
+  progress: number // 0-1
+  
+  // 动画配置
+  config: {
+    enabled: boolean
+    reduced: boolean // 用户偏好：减少动画
+    performance: 'high' | 'medium' | 'low'
+  }
+}
+
+const useAnimationState = () => {
+  const [state, setState] = useState<AnimationState>({
+    phase: 'idle',
+    progress: 0,
+    config: {
+      enabled: !window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+      reduced: false,
+      performance: 'high'
+    }
+  })
+  
+  return { state, setState }
+}
+```
+
+### 2. 动画编排器
+```typescript
+class AnimationOrchestrator {
+  private timeline: gsap.Timeline
+  
+  constructor() {
+    this.timeline = gsap.timeline()
+  }
+  
+  // 进入聊天模式
+  enterChatMode() {
+    this.timeline
+      .to('.chat-bubble', {
+        scale: 0,
+        opacity: 0,
+        duration: 0.1,
+        ease: 'power2.in'
+      })
+      .to('.chat-area', {
+        x: 0,
+        opacity: 1,
+        duration: 0.3,
+        ease: 'power2.out'
+      }, '-=0.05')
+      .to('.chart-area', {
+        width: '50%',
+        duration: 0.3,
+        ease: 'power2.out'
+      }, '<')
+      .to('.input-area', {
+        y: 0,
+        opacity: 1,
+        duration: 0.25,
+        ease: 'power2.out'
+      }, '-=0.15')
+  }
+  
+  // 退出聊天模式
+  exitChatMode() {
+    this.timeline
+      .to('.input-area', {
+        y: 30,
+        opacity: 0,
+        duration: 0.2,
+        ease: 'power2.in'
+      })
+      .to(['.chat-area'], {
+        x: '-100%',
+        opacity: 0,
+        duration: 0.25,
+        ease: 'power2.in'
+      }, '-=0.1')
+      .to('.chart-area', {
+        width: '100%',
+        duration: 0.3,
+        ease: 'power2.out'
+      }, '<')
+      .to('.chat-bubble', {
+        scale: 1,
+        opacity: 1,
+        duration: 0.25,
+        ease: 'back.out(1.7)'
+      }, '-=0.1')
+  }
+}
+```
+
+## 🔍 调试和测试
+
+### 动画调试工具
+```typescript
+const AnimationDebugger = () => {
+  const [debugMode, setDebugMode] = useState(false)
+  
+  useEffect(() => {
+    if (debugMode) {
+      // 显示动画边界框
+      document.body.classList.add('debug-animations')
+      
+      // 慢放动画
+      document.documentElement.style.setProperty('--animation-speed', '0.3')
+    }
+  }, [debugMode])
+  
+  return debugMode ? (
+    <div className="fixed top-4 right-4 z-50 bg-background border rounded p-2">
+      <button onClick={() => setDebugMode(false)}>
+        关闭动画调试
+      </button>
+    </div>
+  ) : null
+}
+```
+
+### 性能监控
+```typescript
+const useAnimationPerformance = () => {
+  const [metrics, setMetrics] = useState({
+    fps: 60,
+    frameDrops: 0,
+    duration: 0
+  })
+  
+  const measurePerformance = useCallback(() => {
+    const start = performance.now()
+    let frames = 0
+    let lastFrame = start
+    
+    const measure = () => {
+      const now = performance.now()
+      frames++
+      
+      if (now - start < 1000) {
+        requestAnimationFrame(measure)
+      } else {
+        setMetrics({
+          fps: Math.round(frames * 1000 / (now - start)),
+          frameDrops: Math.max(0, 60 - frames),
+          duration: now - start
+        })
+      }
+      
+      lastFrame = now
+    }
+    
+    requestAnimationFrame(measure)
+  }, [])
+  
+  return { metrics, measurePerformance }
+}
+```
+
+## ✅ 动画质量检查清单
+
+### 功能检查
+- [ ] 聊天气泡正常显示和隐藏
+- [ ] 布局切换动画流畅无卡顿
+- [ ] 动画序列时机正确
+- [ ] 支持快速点击防抖
+- [ ] 动画可以被中断和重置
+
+### 性能检查
+- [ ] 动画帧率稳定在60fps
+- [ ] 没有明显的重排重绘
+- [ ] GPU加速正常工作
+- [ ] 内存占用稳定
+- [ ] 移动端性能可接受
+
+### 可访问性检查
+- [ ] 支持prefers-reduced-motion
+- [ ] 键盘导航不受影响
+- [ ] 屏幕阅读器兼容
+- [ ] 动画有适当的语义提示
+
+### 兼容性检查
+- [ ] 主流浏览器兼容
+- [ ] 不同屏幕尺寸正常
+- [ ] 触摸设备交互正常
+- [ ] 低性能设备降级方案
+
+---
+
+*此动画规范确保DataEyes聊天功能的布局切换既美观流畅又性能优异，为用户提供自然直观的交互体验。*

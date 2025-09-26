@@ -3,14 +3,17 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getAgentById } from '../types/router'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 
 interface AgentListProps {
   selectedAgent: number;
   onAgentChange: (agentId: number) => void;
   isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
-const AgentList = ({ selectedAgent, onAgentChange, isCollapsed = false }: AgentListProps) => {
+const AgentList = ({ selectedAgent, onAgentChange, isCollapsed = false, onToggleCollapse }: AgentListProps) => {
   const navigate = useNavigate()
   
   const [agents, setAgents] = useState([
@@ -64,6 +67,25 @@ const AgentList = ({ selectedAgent, onAgentChange, isCollapsed = false }: AgentL
     <div className={`bg-background border-r border-border/50 flex flex-col h-full transition-all duration-300 ${
       isCollapsed ? 'w-16' : 'w-80'
     }`}>
+      {/* Agent列表头部 */}
+      <div className="border-b border-border/50">
+        {/* 折叠按钮 - 始终显示 */}
+        <div className="p-2 flex justify-between items-center">
+          {!isCollapsed && <h2 className="text-lg font-semibold text-foreground">消息</h2>}
+          {onToggleCollapse && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onToggleCollapse}
+              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+              title={isCollapsed ? "展开助手列表" : "收起助手列表"}
+            >
+              {isCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+            </Button>
+          )}
+        </div>
+      </div>
+      
       {/* Agent列表 */}
       <div className="flex-1 overflow-y-auto">
         <div className="p-2">

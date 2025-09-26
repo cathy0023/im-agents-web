@@ -43,7 +43,6 @@
 
 - **ChatArea.tsx** - 消息显示和滚动
 - **MessageInput.tsx** - 消息输入和发送
-- **ApiKeyDialog.tsx** - API Key配置
 - **chatStore.ts** - Zustand状态管理
 
 ### 技术栈

@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { MessageCircle, Bot, User, Users } from 'lucide-react'
+import { MessageCircle, Bot, User, Users, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { useConversationStore } from '@/store/conversationStore'
 import type { Conversation } from '@/types/conversation'
 
@@ -10,9 +10,10 @@ interface ConversationListProps {
   selectedConversationId?: string
   onConversationChange: (conversation: Conversation) => void
   isCollapsed?: boolean
+  onToggleCollapse?: () => void
 }
 
-const ConversationList = ({ selectedConversationId, onConversationChange, isCollapsed = false }: ConversationListProps) => {
+const ConversationList = ({ selectedConversationId, onConversationChange, isCollapsed = false, onToggleCollapse }: ConversationListProps) => {
   const navigate = useNavigate()
   const {
     conversations,
@@ -31,7 +32,7 @@ const ConversationList = ({ selectedConversationId, onConversationChange, isColl
     cleanupDuplicateConversations()
     // 然后初始化AI对话
     initializeAIConversations()
-  }, []) // 空依赖数组，确保只执行一次
+  }, [cleanupDuplicateConversations, initializeAIConversations]) // 包含依赖项
 
   const handleConversationClick = (conversation: Conversation) => {
     // 标记为已读
@@ -96,65 +97,83 @@ const ConversationList = ({ selectedConversationId, onConversationChange, isColl
       isCollapsed ? 'w-16' : 'w-80'
     }`}>
       {/* 对话列表头部 */}
-      {!isCollapsed && (
-        <div className="p-4 border-b border-border/50">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-lg font-semibold text-foreground">对话</h2>
-            <div className="flex gap-1">
-              {/* 调试按钮 - 查看当前对话状态 */}
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => {
-                  console.log('当前所有对话:', conversations)
-                  console.log('对话详情:', conversations.map(c => ({
-                    id: c.id,
-                    name: c.name,
-                    type: c.type,
-                    contactId: c.contactId,
-                    agentId: c.agentId
-                  })))
-                }}
-                className="text-xs text-muted-foreground hover:text-primary"
-              >
-                调试
-              </Button>
-              {/* 清理联系人对话按钮 */}
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => {
-                  if (confirm('确定要清除所有联系人对话吗？这将保留AI助手对话。')) {
-                    clearContactConversations()
-                  }
-                }}
-                className="text-xs text-muted-foreground hover:text-orange-500"
-              >
-                清理联系人
-              </Button>
-              {/* 临时重置按钮 - 用于清理重复数据 */}
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => {
-                  if (confirm('确定要重置所有对话吗？这将清除所有对话记录。')) {
-                    resetConversations()
-                    setTimeout(() => {
-                      initializeAIConversations()
-                    }, 100)
-                  }
-                }}
-                className="text-xs text-muted-foreground hover:text-destructive"
-              >
-                重置
-              </Button>
-            </div>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            {conversations.length} 个对话
-          </p>
+      <div className="border-b border-border/50">
+        {/* 折叠按钮 - 始终显示 */}
+        <div className="p-2 flex justify-between items-center">
+          {!isCollapsed && <h2 className="text-lg font-semibold text-foreground">对话</h2>}
+          {onToggleCollapse && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onToggleCollapse}
+              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+              title={isCollapsed ? "展开对话列表" : "收起对话列表"}
+            >
+              {isCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+            </Button>
+          )}
         </div>
-      )}
+        
+        {/* 详细信息 - 仅在展开时显示 */}
+        {!isCollapsed && (
+          <div className="px-4 pb-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex gap-1">
+                {/* 调试按钮 - 查看当前对话状态 */}
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => {
+                    console.log('当前所有对话:', conversations)
+                    console.log('对话详情:', conversations.map(c => ({
+                      id: c.id,
+                      name: c.name,
+                      type: c.type,
+                      contactId: c.contactId,
+                      agentId: c.agentId
+                    })))
+                  }}
+                  className="text-xs text-muted-foreground hover:text-primary"
+                >
+                  调试
+                </Button>
+                {/* 清理联系人对话按钮 */}
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => {
+                    if (confirm('确定要清除所有联系人对话吗？这将保留AI助手对话。')) {
+                      clearContactConversations()
+                    }
+                  }}
+                  className="text-xs text-muted-foreground hover:text-orange-500"
+                >
+                  清理联系人
+                </Button>
+                {/* 临时重置按钮 - 用于清理重复数据 */}
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => {
+                    if (confirm('确定要重置所有对话吗？这将清除所有对话记录。')) {
+                      resetConversations()
+                      setTimeout(() => {
+                        initializeAIConversations()
+                      }, 100)
+                    }
+                  }}
+                  className="text-xs text-muted-foreground hover:text-destructive"
+                >
+                  重置
+                </Button>
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {conversations.length} 个对话
+            </p>
+          </div>
+        )}
+      </div>
 
       {/* 对话列表 */}
       <div className="flex-1 overflow-y-auto">

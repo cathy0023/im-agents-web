@@ -1,0 +1,740 @@
+---
+description: 定义适用于IM Agents Web的 Spec 规范模板，包括需求、设计、任务的格式要求
+globs: ["**/*.md"]
+alwaysApply: false
+---
+# Spec 规范模板 - IM Agents Web
+
+## 概述
+
+Spec（规范）是 SDC 的核心能力之一，用于明确 AI 智能助手功能需求、React + TypeScript 架构设计、开发任务，让 AI 按照 IM Agents Web 系统规范执行。每个功能模块都应该有对应的 Spec 文档。
+
+## 文档结构
+
+### 1. requirements.md（需求规范）
+
+#### EARS 格式需求描述
+```markdown
+# AI 智能助手功能需求规范
+
+## 用户故事
+作为 [用户角色]，我希望 [功能描述]，以便 [业务价值]。
+
+## 功能需求
+
+### 需求 1：[功能名称]
+**WHEN** [触发条件]
+**IF** [前置条件]
+**THEN** [系统行为]
+**AND** [附加行为]
+
+### 需求 2：[功能名称]
+**WHEN** [触发条件]
+**IF** [前置条件]
+**THEN** [系统行为]
+**AND** [附加行为]
+
+## 非功能需求
+- 性能要求：[具体指标，如页面加载时间、AI响应时间、流式输出延迟]
+- 安全要求：[API密钥保护、用户数据隐私]
+- 可用性要求：[可用性指标，99.9% 正常运行时间]
+- 兼容性要求：[浏览器兼容性、移动端支持]
+- 用户体验：[界面响应性、主题切换流畅性]
+
+## 验收标准
+- [ ] AI对话功能正常工作
+- [ ] 流式输出显示正确
+- [ ] 主题切换功能正常
+- [ ] 响应时间满足性能要求
+- [ ] 数据安全措施有效
+```
+
+#### 示例
+```markdown
+# 多Agent智能对话功能需求规范
+
+## 用户故事
+作为用户，我希望能够与不同的AI助手进行对话，以便获得专业领域的帮助和建议。
+
+## 功能需求
+
+### 需求 1：Agent选择和切换
+**WHEN** 用户访问智能助手界面
+**IF** 用户已登录或有访问权限
+**THEN** 系统显示可用的AI助手列表
+**AND** 用户可以选择不同的助手进行对话
+**AND** 系统保持不同助手的对话历史独立
+
+### 需求 2：流式对话功能
+**WHEN** 用户发送消息给AI助手
+**IF** API密钥有效且消息内容不为空
+**THEN** 系统立即显示用户消息
+**AND** 开始流式接收AI回复
+**AND** 实时显示AI回复内容
+**AND** 支持中断正在进行的回复
+
+### 需求 3：主题模式切换
+**WHEN** 用户点击主题切换按钮
+**IF** 界面已完全加载
+**THEN** 系统立即切换到对应主题模式
+**AND** 所有组件颜色和样式正确更新
+**AND** 用户偏好保存到本地存储
+
+## 非功能需求
+- 性能要求：界面加载时间 < 1秒，AI首字节响应时间 < 2秒
+- 安全要求：API密钥加密存储，对话内容本地保护
+- 可用性要求：99.9% 界面可用性，支持网络中断恢复
+- 兼容性要求：支持现代浏览器（Chrome 90+, Firefox 88+, Safari 14+）
+- 用户体验：主题切换无闪烁，流式输出流畅无卡顿
+
+## 验收标准
+- [ ] 多Agent切换功能正常
+- [ ] 流式对话显示正确
+- [ ] 主题切换功能完美
+- [ ] 消息历史独立管理
+- [ ] API密钥安全存储
+- [ ] 移动端响应式正常
+```
+
+### 2. design.md（设计规范）
+
+```markdown
+# React + TypeScript 技术设计规范
+
+## 系统架构
+
+### 整体架构图
+```mermaid
+graph TD
+    A[浏览器客户端] --> B[React 应用]
+    B --> C[React Router]
+    C --> D[React 组件层]
+    D --> E[zustand 状态管理]
+    D --> F[Axios HTTP客户端]
+    F --> G[智谱AI API]
+    B --> H[shadcn UI 组件]
+    H --> D
+    D --> I[主题管理]
+    I --> J[Tailwind CSS]
+```
+
+### React + TypeScript 前端架构
+```
+┌─────────────────────────────────────┐
+│         React 组件层               │
+├─────────────────────────────────────┤
+│    shadcn UI + Tailwind CSS        │
+├─────────────────────────────────────┤
+│      zustand 状态管理              │
+├─────────────────────────────────────┤
+│         Axios HTTP 客户端           │
+├─────────────────────────────────────┤
+│          智谱AI API 服务            │
+└─────────────────────────────────────┘
+```
+
+### 架构层次说明
+
+- **React 组件层**
+  - 使用 TypeScript 进行强类型开发
+  - 组件放在 `src/components` 目录
+  - **严格使用 shadcn UI 组件**，确保设计一致性
+  - 页面组件使用 React Router 约定：
+    ```tsx
+    // src/components/ChatArea.tsx
+    import React from 'react';
+    import { Button } from '@/components/ui/button';
+    import { useChatStore } from '@/store/chatStore';
+    
+    export const ChatArea: React.FC = () => {
+      const { messages, sendMessage } = useChatStore();
+      
+      return (
+        <div className="bg-background text-foreground">
+          {/* 聊天内容 */}
+        </div>
+      );
+    };
+    ```
+  - 组件状态管理使用 zustand
+  - 数据获取使用 Axios + zustand store
+  - **必须支持主题切换**，使用语义化颜色
+- **zustand 状态管理**
+  - 使用 zustand 进行轻量级状态管理
+  - 支持 TypeScript 类型安全
+  - 每个功能模块独立的 store
+  - 持久化重要状态（如API密钥、主题偏好）
+- **HTTP 客户端**
+  - 使用 Axios 进行 API 调用
+  - 支持流式响应（SSE）
+  - 统一错误处理和加载状态管理
+
+### 分层代码示例
+
+- **React 组件示例（TypeScript + shadcn UI）**
+
+```tsx
+// src/components/AgentSelector.tsx
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useChatStore } from '@/store/chatStore';
+import { AGENT_CONFIGS } from '@/store/chatStore';
+
+interface AgentSelectorProps {
+  className?: string;
+}
+
+export const AgentSelector: React.FC<AgentSelectorProps> = ({ className }) => {
+  const { selectedAgent, setSelectedAgent, isLoading } = useChatStore();
+
+  const handleAgentSelect = (agentId: number) => {
+    if (!isLoading) {
+      setSelectedAgent(agentId);
+    }
+  };
+
+  return (
+    <Card className={cn("bg-card text-card-foreground", className)}>
+      <CardHeader>
+        <CardTitle className="text-foreground">选择AI助手</CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-2">
+        {Object.entries(AGENT_CONFIGS).map(([id, config]) => (
+          <Button
+            key={id}
+            variant={selectedAgent === Number(id) ? "default" : "outline"}
+            className="justify-start"
+            onClick={() => handleAgentSelect(Number(id))}
+            disabled={isLoading}
+          >
+            {config.name}
+          </Button>
+        ))}
+      </CardContent>
+    </Card>
+  );
+};
+```
+
+- **API 服务示例**
+
+```tsx
+// src/lib/api.ts
+import axios, { AxiosResponse } from 'axios';
+import type { ChatRequest, ChatStreamChunk } from '@/types/chat';
+
+const api = axios.create({
+  baseURL: 'https://open.bigmodel.cn/api/paas/v4',
+  timeout: 30000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// 发送聊天请求
+export const sendChatMessage = async (
+  request: ChatRequest,
+  apiKey: string
+): Promise<AxiosResponse> => {
+  return api.post('/chat/completions', request, {
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+    },
+  });
+};
+
+// 流式聊天请求
+export const sendStreamChatMessage = async (
+  request: ChatRequest,
+  apiKey: string,
+  onChunk: (chunk: string) => void,
+  onError: (error: Error) => void,
+  onComplete: () => void
+) => {
+  try {
+    const response = await fetch('https://open.bigmodel.cn/api/paas/v4/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({ ...request, stream: true }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new Error('无法读取响应流');
+    }
+
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (line.startsWith('data: ') && line !== 'data: [DONE]') {
+          try {
+            const jsonStr = line.slice(6);
+            const chunk: ChatStreamChunk = JSON.parse(jsonStr);
+            const content = chunk.choices[0]?.delta?.content;
+            if (content) {
+              onChunk(content);
+            }
+          } catch (e) {
+            console.warn('解析流数据失败:', e);
+          }
+        }
+      }
+    }
+
+    onComplete();
+  } catch (error) {
+    onError(error instanceof Error ? error : new Error('未知错误'));
+  }
+};
+```
+
+- **zustand Store 示例**
+
+```tsx
+// src/store/themeStore.ts
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+
+interface ThemeState {
+  theme: 'light' | 'dark';
+  toggleTheme: () => void;
+  setTheme: (theme: 'light' | 'dark') => void;
+}
+
+export const useThemeStore = create<ThemeState>()(
+  persist(
+    (set, get) => ({
+      theme: 'light',
+      toggleTheme: () => {
+        const currentTheme = get().theme;
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        set({ theme: newTheme });
+        
+        // 更新 DOM 类名
+        document.documentElement.classList.toggle('dark', newTheme === 'dark');
+      },
+      setTheme: (theme) => {
+        set({ theme });
+        document.documentElement.classList.toggle('dark', theme === 'dark');
+      },
+    }),
+    {
+      name: 'theme-storage',
+      partialize: (state) => ({ theme: state.theme }),
+    }
+  )
+);
+```
+
+此外，类型定义放在 `src/types/` 目录中，状态管理放在 `src/store/` 目录中。
+
+## 本地数据存储设计
+
+### 浏览器存储策略
+```typescript
+// 本地存储设计
+interface LocalStorageSchema {
+  // 用户配置
+  'zhipu_api_key': string;
+  'selected_model': string;
+  'theme-storage': {
+    state: {
+      theme: 'light' | 'dark';
+    };
+    version: number;
+  };
+  
+  // 聊天历史（可选持久化）
+  'chat-history': {
+    [agentId: number]: {
+      messages: Message[];
+      lastUpdated: number;
+    };
+  };
+  
+  // 用户偏好
+  'user-preferences': {
+    defaultAgent: number;
+    autoSave: boolean;
+    maxHistoryLength: number;
+  };
+}
+
+// 类型安全的本地存储操作
+export class SecureStorage {
+  static setItem<K extends keyof LocalStorageSchema>(
+    key: K,
+    value: LocalStorageSchema[K]
+  ): void {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch (error) {
+      console.warn('存储失败:', error);
+    }
+  }
+
+  static getItem<K extends keyof LocalStorageSchema>(
+    key: K
+  ): LocalStorageSchema[K] | null {
+    try {
+      const item = localStorage.getItem(key);
+      return item ? JSON.parse(item) : null;
+    } catch (error) {
+      console.warn('读取存储失败:', error);
+      return null;
+    }
+  }
+
+  static removeItem<K extends keyof LocalStorageSchema>(key: K): void {
+    localStorage.removeItem(key);
+  }
+}
+```
+
+## 智谱AI API 集成设计
+
+### 聊天API接口
+```tsx
+// 智谱AI接口定义
+interface ZhipuChatAPI {
+  baseURL: 'https://open.bigmodel.cn/api/paas/v4';
+  endpoints: {
+    chat: '/chat/completions';
+  };
+}
+
+// 请求类型定义
+interface ChatCompletionRequest {
+  model: string;
+  messages: Array<{
+    role: 'system' | 'user' | 'assistant';
+    content: string;
+  }>;
+  stream?: boolean;
+  temperature?: number;
+  max_tokens?: number;
+  top_p?: number;
+}
+
+// 响应类型定义
+interface ChatCompletionResponse {
+  id: string;
+  object: string;
+  created: number;
+  model: string;
+  choices: Array<{
+    index: number;
+    message: {
+      role: string;
+      content: string;
+    };
+    finish_reason: string;
+  }>;
+  usage: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
+}
+
+// 流式响应类型
+interface ChatCompletionStreamResponse {
+  id: string;
+  object: string;
+  created: number;
+  model: string;
+  choices: Array<{
+    index: number;
+    delta: {
+      role?: string;
+      content?: string;
+    };
+    finish_reason?: string;
+  }>;
+}
+```
+
+### API错误处理
+```tsx
+// 错误类型定义
+interface APIError {
+  error: {
+    message: string;
+    type: string;
+    param?: string;
+    code?: string;
+  };
+}
+
+// 错误处理函数
+export const handleAPIError = (error: any): string => {
+  if (error.response?.data?.error) {
+    const apiError = error.response.data as APIError;
+    return apiError.error.message;
+  }
+  
+  if (error.code === 'NETWORK_ERROR') {
+    return '网络连接失败，请检查网络设置';
+  }
+  
+  if (error.code === 'TIMEOUT') {
+    return '请求超时，请稍后重试';
+  }
+  
+  return '未知错误，请稍后重试';
+};
+```
+
+## 技术选型
+
+### 前端技术栈
+- 框架：React 19.1.1
+- 构建工具：Vite 7.1.7
+- 语言：TypeScript 5.8.3
+- UI 库：shadcn UI (基于 Radix UI)
+- 状态管理：zustand 5.0.8
+- 路由：React Router Dom 7.9.1
+- HTTP 客户端：Axios 1.12.2
+- 样式：Tailwind CSS 4.1.11
+- 图标：Lucide React 0.544.0
+- 工具库：clsx, class-variance-authority
+
+### 开发和构建工具
+- 包管理器：npm
+- 代码检查：ESLint 9.36.0
+- TypeScript 编译：TypeScript 5.8.3
+- 样式处理：Tailwind CSS + PostCSS
+- 开发服务器：Vite Dev Server（支持 HMR）
+
+## 安全设计
+
+### 隐私保护
+- API密钥本地存储加密
+- 对话内容仅存储在浏览器本地
+- 不向第三方服务发送用户个人信息
+- 支持用户主动清除所有本地数据
+
+### 数据安全
+- 所有 API 请求使用 HTTPS 传输
+- API密钥采用 Bearer Token 认证
+- 本地存储数据采用 JSON 序列化
+- 防止 XSS 攻击（React 自动转义）
+- 输入验证和过滤
+
+## 性能设计
+
+### 前端优化
+- Vite 快速构建和热重载
+- React 19 并发特性优化
+- 组件懒加载和代码分割
+- zustand 轻量级状态管理
+- Tailwind CSS JIT 编译优化
+
+### 运行时优化
+- 流式响应减少等待时间
+- 防抖和节流处理用户输入
+- 虚拟滚动处理大量消息
+- 本地存储缓存用户偏好
+
+### 网络优化
+- HTTP/2 多路复用
+- Axios 请求拦截器统一处理
+- 流式 API 响应实时显示
+- 错误重试和断线重连机制
+```
+
+### 3. tasks.md（任务规范）
+
+```markdown
+# Next.js 功能开发任务分解
+
+## 任务概览
+- 总任务数：X 个
+- 预计工时：X 小时
+- 优先级：高/中/低
+
+## 任务列表
+
+### 阶段 1：基础架构搭建
+- [ ] **任务 1.1**：Next.js 项目配置
+  - 描述：配置 TypeScript、ESLint、Prettier
+  - 工时：2 小时
+  - 依赖：无
+  - 验收标准：项目可以正常启动，类型检查通过
+
+- [ ] **任务 1.2**：Prisma 数据库配置
+  - 描述：设置 Prisma Schema 和数据库连接
+  - 工时：1 小时
+  - 依赖：任务 1.1
+  - 验收标准：数据库迁移成功，Prisma Client 生成
+
+- [ ] **任务 1.3**：状态管理配置
+  - 描述：配置 Zustand 和 TanStack Query
+  - 工时：1 小时
+  - 依赖：任务 1.1
+  - 验收标准：状态管理和数据获取正常工作
+
+### 阶段 2：数据收集模块
+- [ ] **任务 2.1**：Tracking Script 开发
+  - 描述：开发页面访问跟踪脚本
+  - 工时：4 小时
+  - 依赖：任务 1.2
+  - 验收标准：脚本可以正确收集页面浏览数据
+
+- [ ] **任务 2.2**：数据收集 API
+  - 描述：开发 /api/send 数据收集接口
+  - 工时：3 小时
+  - 依赖：任务 2.1
+  - 验收标准：API 可以正确接收和存储数据
+
+- [ ] **任务 2.3**：数据验证和清洗
+  - 描述：实现数据验证和异常数据过滤
+  - 工时：2 小时
+  - 依赖：任务 2.2
+  - 验收标准：无效数据被正确过滤，数据质量保证
+
+### 阶段 3：数据展示组件
+- [ ] **任务 3.1**：统计数据组件
+  - 描述：开发页面浏览量、访客数等基础指标组件
+  - 工时：4 小时
+  - 依赖：任务 2.2
+  - 验收标准：组件正确显示统计数据，样式美观
+
+- [ ] **任务 3.2**：图表组件
+  - 描述：使用 Chart.js 开发趋势图表组件
+  - 工时：6 小时
+  - 依赖：任务 3.1
+  - 验收标准：图表正确显示数据趋势，交互流畅
+
+- [ ] **任务 3.3**：实时数据组件
+  - 描述：开发实时访客数据展示组件
+  - 工时：3 小时
+  - 依赖：任务 3.1
+  - 验收标准：实时数据更新正常，无明显延迟
+
+### 阶段 4：页面开发
+- [ ] **任务 4.1**：仪表板页面
+  - 描述：开发主要的数据展示仪表板
+  - 工时：6 小时
+  - 依赖：任务 3.3
+  - 验收标准：页面布局合理，所有组件正常工作
+
+- [ ] **任务 4.2**：网站管理页面
+  - 描述：开发网站添加、编辑、删除功能页面
+  - 工时：5 小时
+  - 依赖：任务 4.1
+  - 验收标准：CRUD 功能正常，表单验证完整
+
+- [ ] **任务 4.3**：报告页面
+  - 描述：开发详细的数据分析报告页面
+  - 工时：4 小时
+  - 依赖：任务 4.1
+  - 验收标准：报告数据准确，导出功能正常
+
+### 阶段 5：优化和测试
+- [ ] **任务 5.1**：性能优化
+  - 描述：优化组件渲染和数据查询性能
+  - 工时：3 小时
+  - 依赖：任务 4.3
+  - 验收标准：页面加载时间 < 1秒，数据查询 < 500ms
+
+- [ ] **任务 5.2**：测试用例
+  - 描述：编写组件测试和 API 测试
+  - 工时：4 小时
+  - 依赖：任务 5.1
+  - 验收标准：测试覆盖率 > 80%，所有测试通过
+
+## 任务依赖关系
+```mermaid
+gantt
+    title Web Analytics 功能开发计划
+    dateFormat  YYYY-MM-DD
+    section 基础架构
+    Next.js配置       :done, task1, 2024-01-01, 2h
+    Prisma配置        :done, task2, after task1, 1h
+    状态管理配置      :task3, after task1, 1h
+    section 数据收集
+    Tracking Script   :task4, after task2, 4h
+    数据收集API       :task5, after task4, 3h
+    数据验证清洗      :task6, after task5, 2h
+    section 数据展示
+    统计数据组件      :task7, after task5, 4h
+    图表组件         :task8, after task7, 6h
+    实时数据组件      :task9, after task7, 3h
+    section 页面开发
+    仪表板页面       :task10, after task9, 6h
+    网站管理页面     :task11, after task10, 5h
+    报告页面         :task12, after task10, 4h
+    section 优化测试
+    性能优化         :task13, after task12, 3h
+    测试用例         :task14, after task13, 4h
+```
+
+## 风险识别
+- **风险 1**：大数据量查询性能问题
+  - 影响：可能导致页面响应缓慢
+  - 缓解措施：使用 ClickHouse 优化查询，实现数据分页
+
+- **风险 2**：实时数据更新复杂性
+  - 影响：可能影响实时功能的稳定性
+  - 缓解措施：使用 WebSocket 或 SSE，充分测试边界情况
+
+- **风险 3**：多数据库支持兼容性
+  - 影响：可能导致某些数据库功能异常
+  - 缓解措施：使用 Prisma 抽象层，针对每种数据库充分测试
+
+## 验收标准
+- [ ] 数据收集脚本正常工作，数据准确
+- [ ] 所有 API 接口响应正常，性能满足要求  
+- [ ] 前端组件显示正确，交互流畅
+- [ ] 图表展示准确，样式美观
+- [ ] 实时数据更新及时
+- [ ] 隐私保护措施有效
+- [ ] 多数据库支持正常
+- [ ] 测试覆盖率达标
+```
+
+## 使用指南
+
+### 创建新功能 Spec
+1. 在 `.sdc/specs` 目录下创建功能模块文件夹
+2. 复制上述模板创建 `requirements.md`、`design.md`、`tasks.md`
+3. 根据 Web Analytics 具体需求修改模板内容
+4. 确保符合 Next.js 和 TypeScript 最佳实践
+
+### 更新 Spec
+1. 当业务需求变更时，同步更新 `requirements.md`
+2. 当技术架构调整时，同步更新 `design.md`
+3. 当开发任务进度变化时，同步更新 `tasks.md`
+4. 确保三个文档与实际代码保持一致
+
+### Umami 项目协作
+1. 使用 Git 管理 Spec 文档，遵循分支管理规范
+2. 通过 Pull Request 审查 Spec 变更
+3. 定期同步 Spec 与 Next.js 代码的一致性
+4. 使用 TypeScript 类型检查确保 API 接口一致性
+5. 利用 Prisma Schema 作为数据模型的单一来源
+
+### 最佳实践
+1. **功能导向**：每个 Spec 应该围绕具体的 Web Analytics 功能
+2. **技术适配**：充分利用 Next.js App Router 和 React Server Components
+3. **性能考虑**：在设计阶段就考虑大数据量查询和实时更新的性能
+4. **隐私优先**：确保所有功能都符合隐私保护要求
+5. **多数据库支持**：设计时考虑 PostgreSQL、MySQL、ClickHouse 的兼容性

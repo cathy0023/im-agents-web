@@ -1,0 +1,392 @@
+---
+description: 定义适用于IM Agents Web的 Hooks 钩子配置模板和最佳实践
+globs: ["**/*.yaml", "**/*.yml"]
+alwaysApply: false
+---
+# Hooks 钩子模板 - IM Agents Web
+
+## 概述
+
+Hooks（钩子）是 SDC 的自动化能力，专为 IM Agents Web 的 React + TypeScript + Vite + Tailwind CSS + shadcn UI + zustand 技术栈定制，用于减少重复劳动，提高开发效率。通过配置触发条件和执行动作，实现前端构建、测试、类型检查、代码质量检查等开发流程的自动化。
+
+## 钩子配置结构
+
+### 基础配置格式
+```yaml
+# .sdc/hooks/config.yaml
+hooks:
+  - name: "React组件测试同步钩子"
+    trigger:
+      type: "fileEdited"
+      pattern: "src/components/**/*.{tsx,ts}"
+      exclude: ["**/*.test.{ts,tsx}", "**/node_modules/**"]
+    action:
+      type: "ai_prompt"
+      prompt: |
+        检查修改的 React 组件，请确保：
+        1. 组件是否遵循 shadcn UI 和语义化颜色规范
+        2. 是否正确使用 TypeScript 类型定义
+        3. 是否需要更新相关的测试用例
+        4. 是否正确实现了暗黑/浅色模式支持
+        5. 提醒开发者检查组件的可访问性
+      description: "当 React 组件被编辑时，自动检查规范和质量"
+    
+  - name: "API接口文档更新钩子"
+    trigger:
+      type: "fileEdited"
+      pattern: "src/lib/api.ts"
+    action:
+      type: "ai_prompt"
+      prompt: |
+        检查修改的 API 接口文件，如果发现接口变更：
+        1. 更新对应的 TypeScript 类型定义
+        2. 检查是否需要更新 zustand store 中的调用代码
+        3. 验证是否需要更新相关组件的数据获取逻辑
+        4. 提醒开发者更新相关测试用例
+        5. 检查错误处理是否完善
+      description: "当 API 接口文件被编辑时，自动检查和更新相关文档"
+    
+  - name: "TypeScript 类型检查钩子"
+    trigger:
+      type: "fileSaved"
+      pattern: "src/**/*.{ts,tsx}"
+    action:
+      type: "command"
+      command: "npm run build"
+      description: "当 TypeScript 文件保存时，自动运行类型检查"
+    
+  - name: "代码质量检查钩子"
+    trigger:
+      type: "fileSaved"
+      pattern: "src/**/*.{ts,tsx}"
+    action:
+      type: "command"
+      command: "npm run lint"
+      description: "当 TypeScript 文件保存时，自动运行 ESLint 检查"
+```
+
+## 触发条件类型
+
+### 1. 文件操作触发
+```yaml
+trigger:
+  type: "fileEdited" | "fileCreated" | "fileDeleted" | "fileSaved"
+  pattern: "glob 模式匹配"
+  exclude: ["排除的文件模式"]
+```
+
+**示例**：
+```yaml
+# 当任何 React/TypeScript 文件被编辑时触发
+trigger:
+  type: "fileEdited"
+  pattern: "src/**/*.{ts,tsx}"
+  exclude: ["**/node_modules/**", "**/*.test.{ts,tsx}", "**/*.spec.{ts,tsx}"]
+
+# 当 API 接口文件被创建时触发
+trigger:
+  type: "fileCreated"
+  pattern: "src/lib/api.ts"
+
+# 当组件文件被保存时触发
+trigger:
+  type: "fileSaved"
+  pattern: "src/components/**/*.{tsx,ts}"
+```
+
+### 2. 时间触发
+```yaml
+trigger:
+  type: "scheduled"
+  schedule: "cron 表达式"
+```
+
+**示例**：
+```yaml
+# 每天上午 9 点触发
+trigger:
+  type: "scheduled"
+  schedule: "0 9 * * *"
+
+# 每周一上午 10 点触发
+trigger:
+  type: "scheduled"
+  schedule: "0 10 * * 1"
+```
+
+### 3. 手动触发
+```yaml
+trigger:
+  type: "manual"
+  command: "触发命令"
+```
+
+**示例**：
+```yaml
+# 通过命令手动触发
+trigger:
+  type: "manual"
+  command: "sdc hook run api-doc-update"
+```
+
+## 执行动作类型
+
+### 1. 命令执行
+```yaml
+action:
+  type: "command"
+  command: "要执行的命令"
+  working_dir: "工作目录（可选）"
+  timeout: "超时时间（可选）"
+```
+
+**示例**：
+```yaml
+action:
+  type: "command"
+  command: "npm run build"
+  working_dir: "."
+  timeout: "60s"
+```
+
+### 2. AI 提示
+```yaml
+action:
+  type: "ai_prompt"
+  prompt: |
+    给 AI 的提示内容
+    可以包含多行文本
+  context_files: ["相关文件路径"]
+```
+
+**示例**：
+```yaml
+action:
+  type: "ai_prompt"
+  prompt: |
+    分析修改的类型定义文件，检查是否需要：
+    1. 更新相关的 React 组件属性类型
+    2. 更新 zustand store 状态类型
+    3. 更新 API 调用的返回类型
+    4. 更新测试用例中的类型断言
+    请提供具体的建议和代码示例。
+  context_files: ["src/types/", "src/store/", "src/lib/api.ts"]
+```
+
+### 3. 复合动作
+```yaml
+action:
+  type: "composite"
+  actions:
+    - type: "command"
+      command: "npm run lint"
+    - type: "command"
+      command: "npm run build"
+    - type: "ai_prompt"
+      prompt: "检查 TypeScript 编译和代码规范问题"
+```
+
+## 常用钩子模板
+
+### 1. React 组件质量检查钩子
+```yaml
+- name: "React 组件质量检查钩子"
+  trigger:
+    type: "fileEdited"
+    pattern: "src/components/**/*.{tsx,ts}"
+    exclude: ["**/*.test.{ts,tsx}", "**/*.spec.{ts,tsx}"]
+  action:
+    type: "ai_prompt"
+    prompt: |
+      当 React 组件被修改时，请：
+      1. 检查是否遵循 shadcn UI 组件使用规范
+      2. 验证是否正确使用语义化颜色（bg-background、text-foreground等）
+      3. 确保组件支持暗黑/浅色模式切换
+      4. 检查 TypeScript 类型定义是否完整和正确
+      5. 验证是否需要更新相关的测试文件
+      6. 提醒开发者检查组件的可访问性
+```
+
+### 2. API 接口和类型检查钩子
+```yaml
+- name: "API 接口和类型检查钩子"
+  trigger:
+    type: "fileEdited"
+    pattern: "src/lib/api.ts"
+  action:
+    type: "composite"
+    actions:
+      - type: "command"
+        command: "npm run build"
+      - type: "ai_prompt"
+        prompt: |
+          检查 API 接口文件的变更：
+          1. 验证是否需要更新 src/types/ 中的类型定义
+          2. 检查是否需要更新 zustand store 中的 API 调用
+          3. 验证错误处理和响应类型是否正确
+          4. 提醒开发者更新相关组件的数据获取逻辑
+          5. 检查是否需要更新 axios 配置
+```
+
+### 3. TypeScript 代码质量检查钩子
+```yaml
+- name: "TypeScript 代码质量检查钩子"
+  trigger:
+    type: "fileSaved"
+    pattern: "src/**/*.{ts,tsx}"
+  action:
+    type: "composite"
+    actions:
+      - type: "command"
+        command: "npm run lint"
+      - type: "command"
+        command: "npm run build"
+      - type: "ai_prompt"
+        prompt: |
+          TypeScript 代码质量检查完成后，请：
+          1. 分析 ESLint 检查结果和类型错误
+          2. 提供具体的修复建议
+          3. 检查是否遵循了 React 最佳实践
+          4. 验证 Tailwind CSS 类名使用是否规范
+          5. 提醒开发者关注性能和代码复用
+```
+
+### 4. zustand 状态管理检查钩子
+```yaml
+- name: "zustand 状态管理检查钩子"
+  trigger:
+    type: "fileEdited"
+    pattern: "src/store/**/*.ts"
+  action:
+    type: "ai_prompt"
+    prompt: |
+      检测到 zustand store 文件变更，请：
+      1. 检查状态接口类型定义是否完整
+      2. 验证状态更新逻辑是否符合不可变性原则
+      3. 检查是否需要更新相关组件的 store 使用
+      4. 提醒开发者测试状态管理功能
+      5. 验证是否遵循了 zustand 最佳实践
+```
+
+### 5. Vite 构建和优化钩子
+```yaml
+- name: "Vite 构建优化钩子"
+  trigger:
+    type: "fileEdited"
+    pattern: "src/**/*.{ts,tsx}"
+    exclude: ["**/*.test.*", "**/*.spec.*", "**/node_modules/**"]
+  action:
+    type: "composite"
+    actions:
+      - type: "command"
+        command: "npm run build"
+        timeout: "120s"
+      - type: "ai_prompt"
+        prompt: |
+          Vite 项目构建后，请：
+          1. 检查构建是否成功，分析 TypeScript 编译输出
+          2. 检查 bundle 大小和代码分割是否合理
+          3. 验证生产环境是否正常工作
+          4. 检查是否有未使用的依赖或代码
+          5. 提醒开发者关注首屏加载性能
+```
+
+### 6. 主题和样式一致性检查钩子
+```yaml
+- name: "主题样式一致性检查钩子"
+  trigger:
+    type: "fileEdited"
+    pattern: "src/**/*.{tsx,ts}"
+  action:
+    type: "ai_prompt"
+    prompt: |
+      检测到组件样式变更，请：
+      1. 验证是否使用了 shadcn UI 语义化颜色
+      2. 检查是否避免了硬编码颜色（如 bg-white、text-gray-900）
+      3. 确保在暗黑和浅色模式下都能正确显示
+      4. 验证 Tailwind CSS 类名使用是否符合响应式设计
+      5. 提醒开发者测试主题切换功能
+```
+
+## 配置最佳实践
+
+### 1. 钩子命名规范
+- 使用描述性的名称，明确适用于 React + TypeScript 技术栈
+- 包含触发条件和执行动作的关键信息
+- 使用中文名称便于理解
+- 区分组件、状态管理、API等不同功能模块
+
+### 2. 触发条件优化
+- 使用精确的文件模式匹配，针对 TypeScript/React 文件
+- 合理使用排除规则避免 node_modules、测试文件等不必要的触发
+- 避免过于频繁的触发，特别是构建相关的操作
+- 考虑 Vite 的快速开发特性和项目目录结构
+
+### 3. 执行动作设计
+- 动作应该是幂等的，可以重复执行
+- 优先使用 npm scripts，保持与 Vite 构建流程一致
+- 提供清晰的执行结果反馈
+- 包含 TypeScript 类型检查和错误处理
+- 考虑 Vite 的快速构建特性
+
+### 4. 性能考虑
+- 避免执行时间过长的动作（Vite 构建通常很快）
+- 合理设置超时时间，TypeScript 编译可能需要额外时间
+- 使用增量类型检查和 ESLint 检查
+- 利用 Vite 的热重载和快速刷新功能
+
+### 5. IM Agents 项目协作
+- 将钩子配置纳入 Git 版本控制
+- 团队成员共享 React + TypeScript 开发钩子配置
+- 定期审查和优化钩子规则，确保符合 shadcn UI 规范
+- 确保与 CI/CD 流程兼容
+
+## 使用指南
+
+### 启用钩子
+1. 在项目根目录创建 `.sdc/hooks/` 目录
+2. 创建 `config.yaml` 配置文件
+3. 定义适合 React + TypeScript 项目的钩子规则
+4. 确保项目中有相应的 npm scripts（lint、build等）
+5. 重启 Vite 开发服务器使配置生效
+
+### 管理钩子
+```bash
+# 查看所有钩子
+sdc hook list
+
+# 启用特定钩子
+sdc hook enable <hook-name>
+
+# 禁用特定钩子
+sdc hook disable <hook-name>
+
+# 手动触发钩子
+sdc hook run <hook-name>
+
+# 查看钩子执行日志
+sdc hook logs <hook-name>
+```
+
+### React + TypeScript 项目调试钩子
+1. 检查触发条件是否正确匹配 TypeScript/React 文件
+2. 验证 npm scripts 是否存在且可执行
+3. 查看 Vite 开发服务器和构建日志
+4. 使用测试模式验证钩子行为
+5. 检查 ESLint 报告和 TypeScript 编译错误
+
+### 推荐的 package.json scripts
+```json
+{
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "type-check": "tsc --noEmit",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\""
+  }
+}
+```

@@ -1,29 +1,22 @@
 import { useState } from 'react'
-import { PanelLeft, Settings, Key } from 'lucide-react'
+import { PanelLeft, Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import ConversationList from './ConversationList'
 import ContactChatArea from './ContactChatArea'
 import SettingsPanel from './SettingsPanel'
-import ApiKeyDialog from './ApiKeyDialog'
-import { useChatStore } from '../store/chatStore'
+// useChatStore import removed as not used
 import { useConversationStore } from '../store/conversationStore'
 import type { Conversation } from '@/types/conversation'
 
 const ContactMessageLayout = () => {
   const [isSettingsPanelVisible, setIsSettingsPanelVisible] = useState(false)
   const [isConversationListCollapsed, setIsConversationListCollapsed] = useState(false)
-  const [isApiKeyDialogOpen, setIsApiKeyDialogOpen] = useState(false)
-  
-  const { apiKey } = useChatStore()
   const { currentConversation } = useConversationStore()
 
   const handleToggleConversationList = () => {
     setIsConversationListCollapsed(!isConversationListCollapsed)
   }
 
-  const handleApiKeyConfig = () => {
-    setIsApiKeyDialogOpen(true)
-  }
 
   const handleConversationChange = (conversation: Conversation) => {
     // 对话切换逻辑已在ConversationList内部处理
@@ -37,6 +30,7 @@ const ContactMessageLayout = () => {
         <ConversationList 
           onConversationChange={handleConversationChange}
           isCollapsed={isConversationListCollapsed}
+          onToggleCollapse={handleToggleConversationList}
         />
         
         {/* 右侧主要内容区域 */}
@@ -56,22 +50,8 @@ const ContactMessageLayout = () => {
               <h2 className="text-lg font-semibold text-foreground">
                 {currentConversation?.name || '选择对话'}
               </h2>
-              {!apiKey && (
-                <span className="px-2 py-1 text-xs bg-destructive/10 text-destructive rounded">
-                  需要配置API Key
-                </span>
-              )}
             </div>
             <div className="flex items-center space-x-2">
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={handleApiKeyConfig}
-                className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                title="配置API Key"
-              >
-                <Key className="h-4 w-4" />
-              </Button>
               <Button 
                 variant="ghost" 
                 size="icon"
@@ -100,11 +80,6 @@ const ContactMessageLayout = () => {
         </div>
       </div>
       
-      {/* API Key配置弹窗 */}
-      <ApiKeyDialog 
-        isOpen={isApiKeyDialogOpen}
-        onClose={() => setIsApiKeyDialogOpen(false)}
-      />
     </>
   )
 }
