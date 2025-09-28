@@ -1,15 +1,11 @@
 import { useParams, Navigate } from 'react-router-dom'
-import { PanelLeft } from 'lucide-react'
-// 暂时未使用: Settings, Key
-import { Button } from '@/components/ui/button'
 import { useState } from 'react'
-import ChatArea from './ChatArea'
-import ChartArea from './ChartArea'
-import SettingsPanel from './SettingsPanel'
-import AgentList from './AgentList'
-import FooterBar from './FooterBar'
+import ChatArea from '../ChatArea'
+import SettingsPanel from '../SettingsPanel'
+import AgentList from '../AgentList'
+import FooterBar from '../FooterBar'
 import DataEyesLayout from './DataEyesLayout'
-import { getAgentByRoute, getDefaultAgent, type Agent } from '../types/router'
+import { getAgentByRoute, getDefaultAgent, type Agent } from '../../types/router'
 
 const MessageLayout = () => {
   const { agentType } = useParams<{ agentType: string }>()
@@ -37,16 +33,11 @@ const MessageLayout = () => {
   const getContentLayout = () => {
     switch(currentAgent.id) {
       case 1: 
-        // HR智能助手：对话和数据同时显示 + 输入框
+        // HR智能助手：纯聊天布局 + 输入框
         return (
           <div className="flex-1 flex flex-col h-full">
-            <div className="flex-1 flex overflow-hidden">
-              <div className="flex-1 h-full">
-                <ChatArea selectedAgent={currentAgent.id} />
-              </div>
-              <div className="flex-1 h-full">
-                <ChartArea />
-              </div>
+            <div className="flex-1 overflow-hidden">
+              <ChatArea selectedAgent={currentAgent.id} />
             </div>
             <FooterBar 
               mode="hr" 
@@ -57,10 +48,10 @@ const MessageLayout = () => {
           </div>
         )
       case 2:
-        // DataEyes：可配置聊天的数据分析页面
+        // DataEyes：agentsList + dataEyesLayout
         return <DataEyesLayout agentId={currentAgent.id} isAgentListCollapsed={isAgentListCollapsed} />
       case 3:
-        // 对话助手：只有对话 + 输入框
+        // 心理测评师：纯聊天布局 + 输入框
         return (
           <div className="flex-1 flex flex-col h-full">
             <div className="flex-1 overflow-hidden">
@@ -75,15 +66,11 @@ const MessageLayout = () => {
           </div>
         )
       default:
+        // 默认：纯聊天布局
         return (
-          <div className="flex-1 flex flex-col">
-            <div className="flex-1 flex overflow-hidden">
-              <div className="flex-1 h-full">
-                <ChatArea selectedAgent={currentAgent.id} />
-              </div>
-              <div className="flex-1 h-full">
-                <ChartArea />
-              </div>
+          <div className="flex-1 flex flex-col h-full">
+            <div className="flex-1 overflow-hidden">
+              <ChatArea selectedAgent={currentAgent.id} />
             </div>
             <FooterBar 
               mode="hr" 

@@ -6,7 +6,7 @@ import { useResponsiveBreakpoints } from '@/hooks/useDataEyesPreferences'
 interface ChatBubbleProps {
   visible: boolean
   onClick: () => void
-  position?: 'bottom-left' | 'bottom-right'
+  position?: 'bottom-left' | 'bottom-side-left'
   size?: 'sm' | 'md' | 'lg'
   variant?: 'default' | 'primary' | 'outline' | 'gradient'
   animation?: boolean
@@ -52,7 +52,7 @@ const ChatBubble = ({
 
   const positionStyles = {
     'bottom-left': "bottom-6", // 只设置底部位置，左侧位置用style设置
-    'bottom-right': "bottom-6 right-6"
+    'bottom-side-left': "bottom-6 left-14"
   }
 
   const iconSizes = {

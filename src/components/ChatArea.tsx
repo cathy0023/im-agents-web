@@ -42,6 +42,10 @@ const ChatArea = ({ selectedAgent = 1 }: ChatAreaProps) => {
       return '用户';
     }
     
+    if (!agentId) {
+      return 'AI助手';
+    }
+    
     const agentConfig = AGENT_CONFIGS[agentId as keyof typeof AGENT_CONFIGS];
     return agentConfig?.name || 'AI助手';
   };
@@ -61,6 +65,9 @@ const ChatArea = ({ selectedAgent = 1 }: ChatAreaProps) => {
 
   const getWelcomeMessage = () => {
     const agentConfig = AGENT_CONFIGS[selectedAgent as keyof typeof AGENT_CONFIGS];
+    if (!agentConfig) {
+      return '您好！我是AI助手，很高兴为您服务！';
+    }
     return `您好！我是${agentConfig.name}，${agentConfig.systemPrompt.split('，')[1] || '很高兴为您服务！'}`;
   }
 
