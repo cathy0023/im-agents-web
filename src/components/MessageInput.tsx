@@ -90,24 +90,26 @@ const MessageInput = ({ className = '', placeholder }: MessageInputProps) => {
   const finalPlaceholder = placeholder || defaultPlaceholder;
 
   return (
-    <div className={`flex items-end space-x-3 ${className}`}>
-      <Textarea
-        ref={textareaRef}
-        value={currentMessage}
-        onChange={handleInputChange}
-        onKeyDown={handleKeyDown}
-        placeholder={finalPlaceholder}
-        disabled={isLoading}
-        rows={3}
-        className="flex-1 resize-none"
-        style={{ height: 'auto' }}
-      />
+    <div className={`flex items-end space-x-4 ${className}`}>
+      <div className="flex-1 relative">
+        <Textarea
+          ref={textareaRef}
+          value={currentMessage}
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
+          placeholder={finalPlaceholder}
+          disabled={isLoading}
+          rows={3}
+          className="flex-1 resize-none border-0 bg-muted/20 rounded-2xl px-4 py-3 focus:ring-2 focus:ring-primary/20 focus:bg-background/80 transition-all duration-200 shadow-sm"
+          style={{ height: 'auto' }}
+        />
+      </div>
       {isStreaming ? (
         <Button 
           onClick={handleStop}
           variant="outline" 
           size="icon" 
-          className="px-4 py-3 border-destructive text-destructive hover:bg-destructive/10"
+          className="h-12 w-12 rounded-2xl border-destructive/20 text-destructive hover:bg-destructive/10 hover:scale-105 transition-all duration-200 shadow-sm"
         >
           <svg 
             className="w-4 h-4" 
@@ -122,7 +124,7 @@ const MessageInput = ({ className = '', placeholder }: MessageInputProps) => {
           onClick={handleSend}
           disabled={!currentMessage.trim() || isLoading}
           size="icon" 
-          className="px-4 py-3"
+          className="h-12 w-12 rounded-2xl bg-primary hover:bg-primary/90 hover:scale-105 transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? (
             <svg 

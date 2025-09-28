@@ -107,7 +107,6 @@ const AdaptiveContainer = ({
             className={cn(
               "flex flex-col h-full bg-background",
               isMobile ? "absolute inset-0 z-10" : "relative", // 移动端全屏覆盖
-              !isMobile && "border-r border-border" // 非移动端添加分割线
             )}
             style={{ 
               width: isMobile ? '100%' : `${responsiveSplitRatio * 100}%` 

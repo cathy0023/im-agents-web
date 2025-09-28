@@ -64,20 +64,22 @@ const AgentList = ({ selectedAgent, onAgentChange, isCollapsed = false, onToggle
   }
 
   return (
-    <div className={`bg-background border-r border-border/50 flex flex-col h-full transition-all duration-300 ${
+    <div className={`bg-muted/20 flex flex-col h-full transition-all duration-300 ${
       isCollapsed ? 'w-16' : 'w-80'
-    }`}>
+    }`} style={{ 
+      borderRight: isCollapsed ? 'none' : '1px solid hsl(var(--border) / 0.3)' 
+    }}>
       {/* Agent列表头部 */}
-      <div className="border-b border-border/50">
+      <div className="bg-muted/30 backdrop-blur-sm">
         {/* 折叠按钮 - 始终显示 */}
-        <div className="p-2 flex justify-between items-center">
+        <div className="p-4 flex justify-between items-center">
           {!isCollapsed && <h2 className="text-lg font-semibold text-foreground">消息</h2>}
           {onToggleCollapse && (
             <Button
               variant="ghost"
               size="icon"
               onClick={onToggleCollapse}
-              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50"
               title={isCollapsed ? "展开助手列表" : "收起助手列表"}
             >
               {isCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
@@ -88,19 +90,19 @@ const AgentList = ({ selectedAgent, onAgentChange, isCollapsed = false, onToggle
       
       {/* Agent列表 */}
       <div className="flex-1 overflow-y-auto">
-        <div className="p-2">
+        <div className="px-2 py-1">
           {agents.map((agent) => (
             <div 
               key={agent.id} 
               onClick={() => handleAgentClick(agent.id)}
-              className={`flex items-center px-3 py-3 cursor-pointer transition-colors ${
+              className={`flex items-center px-4 py-4 cursor-pointer transition-all duration-200 rounded-xl mb-2 ${
                 isCollapsed 
                   ? 'justify-center' 
                   : 'space-x-3'
               } ${
                 selectedAgent === agent.id 
-                  ? 'bg-primary/10 rounded-lg' 
-                  : 'hover:bg-muted/30'
+                  ? 'bg-background/80 shadow-sm ring-1 ring-primary/20' 
+                  : 'hover:bg-background/40 hover:shadow-sm'
               }`}
               title={isCollapsed ? `${agent.name} - ${agent.message}` : ''}
             >

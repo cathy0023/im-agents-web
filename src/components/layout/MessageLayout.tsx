@@ -100,7 +100,7 @@ const MessageLayout = () => {
           {/* 主要内容区域 */}
           <div className="flex-1 flex overflow-hidden">
             {/* 中间内容区域 */}
-            <div className="flex-1 flex flex-col">
+            <div className="flex-1 flex flex-col bg-background">
               {/* 内容区域 - 根据智能体类型显示不同布局 */}
               {getContentLayout()}
             </div>

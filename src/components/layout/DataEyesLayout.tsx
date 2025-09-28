@@ -64,16 +64,18 @@ const DataEyesLayout = ({
 
   // 构建聊天组件
   const chatComponent = isChatActive ? (
-    <div className="flex-1 flex flex-col h-full relative">
+    <div className="flex-1 flex flex-col h-full relative bg-background/95 backdrop-blur-sm overflow-hidden shadow-lg border border-border/10 border-t-0 border-b-0" style={{
+      marginLeft: '1px' // 避免与左侧边框重叠
+    }}>
       {/* 聊天区域头部和关闭按钮 */}
-      <div className="flex items-center justify-between p-3 border-b border-border bg-background">
-        <div className="flex items-center space-x-2">
-          <div className="w-3 h-3 rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400"></div>
-          <span className="text-sm font-medium text-foreground">DataEyes 聊天</span>
+      <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-background/80 to-background/60 backdrop-blur-sm">
+        <div className="flex items-center space-x-3">
+          <div className="w-2 h-2 rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 shadow-sm animate-pulse"></div>
+          <span className="text-sm font-semibold text-foreground">DataEyes 聊天</span>
         </div>
         <button
           onClick={closeChatMode}
-          className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors duration-200"
+          className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent/30 transition-all duration-200 hover:scale-105"
           title="关闭聊天 (ESC)"
           aria-label="关闭聊天"
         >

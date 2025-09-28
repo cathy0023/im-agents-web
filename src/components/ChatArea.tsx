@@ -74,19 +74,19 @@ const ChatArea = ({ selectedAgent = 1 }: ChatAreaProps) => {
   return (
     <div className="h-full bg-background flex flex-col">
       {/* 对话消息列表 */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-6 space-y-6">
         {/* 欢迎消息 */}
         {showWelcome && (
           <div className="flex justify-start">
             <div className="max-w-[70%] mr-auto">
-              <div className="p-3 rounded-lg bg-muted text-foreground">
-                <p className="text-sm whitespace-pre-wrap">{getWelcomeMessage()}</p>
+              <div className="p-4 rounded-2xl bg-muted/30 text-foreground shadow-sm backdrop-blur-sm">
+                <p className="text-sm whitespace-pre-wrap leading-relaxed">{getWelcomeMessage()}</p>
               </div>
-              <div className="flex items-center mt-1 space-x-2">
-                <span className="text-xs text-muted-foreground">
+              <div className="flex items-center mt-2 space-x-2 px-1">
+                <span className="text-xs text-muted-foreground font-medium">
                   {getSenderName('assistant', selectedAgent)}
                 </span>
-                <span className="text-xs text-muted-foreground/70">刚刚</span>
+                <span className="text-xs text-muted-foreground/60">刚刚</span>
               </div>
             </div>
           </div>
@@ -96,24 +96,24 @@ const ChatArea = ({ selectedAgent = 1 }: ChatAreaProps) => {
         {currentMessages.map((message) => (
           <div key={message.id} className={`flex ${message.role === 'assistant' ? 'justify-start' : 'justify-end'}`}>
             <div className={`max-w-[70%] ${message.role === 'assistant' ? 'mr-auto' : 'ml-auto'}`}>
-              <div className={`p-3 rounded-lg ${
+              <div className={`p-4 rounded-2xl shadow-sm backdrop-blur-sm ${
                 message.role === 'assistant'
-                  ? 'bg-muted text-foreground' 
-                  : 'bg-primary text-primary-foreground'
+                  ? 'bg-muted/30 text-foreground' 
+                  : 'bg-primary/90 text-primary-foreground'
               }`}>
-                <p className="text-sm whitespace-pre-wrap">
+                <p className="text-sm whitespace-pre-wrap leading-relaxed">
                   {message.content}
                   {/* 流式输出时显示光标 */}
                   {message.isStreaming && (
-                    <span className="inline-block w-2 h-4 ml-1 bg-muted-foreground animate-pulse" />
+                    <span className="inline-block w-2 h-4 ml-1 bg-muted-foreground animate-pulse rounded-sm" />
                   )}
                 </p>
               </div>
-              <div className="flex items-center mt-1 space-x-2">
-                <span className="text-xs text-muted-foreground">
+              <div className="flex items-center mt-2 space-x-2 px-1">
+                <span className="text-xs text-muted-foreground font-medium">
                   {getSenderName(message.role, message.agentId)}
                 </span>
-                <span className="text-xs text-muted-foreground/70">
+                <span className="text-xs text-muted-foreground/60">
                   {formatTime(message.timestamp)}
                 </span>
                 {/* 显示流式状态 */}

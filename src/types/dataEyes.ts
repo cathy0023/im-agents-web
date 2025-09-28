@@ -11,7 +11,7 @@ export interface DataEyesLayoutProps {
   agentId: number
   chatEnabled?: boolean
   className?: string
-  chatBubblePosition?: 'bottom-left' | 'bottom-right'
+  chatBubblePosition?: 'bottom-left' | 'bottom-side-left'
   isAgentListCollapsed?: boolean
 }
 
@@ -33,7 +33,7 @@ export interface ChatBubblePosition {
 
 export interface DataEyesPreferences {
   chatEnabled: boolean
-  bubblePosition: 'bottom-left' | 'bottom-right'
+  bubblePosition: 'bottom-left' | 'bottom-side-left'
   defaultChatActive: boolean
   animationEnabled: boolean
 }

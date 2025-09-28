@@ -14,7 +14,7 @@ const ChatInputArea = ({
 }: ChatInputAreaProps) => {
   return (
     <div className={cn(
-      "border-t border-border bg-background p-4",
+      "bg-background/80 backdrop-blur-sm p-6",
       className
     )}>
       <MessageInput 
