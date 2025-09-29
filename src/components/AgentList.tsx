@@ -1,10 +1,12 @@
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getAgentById } from '../types/router'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { agentsApi } from '@/api'
+import type { Agent } from '@/api'
 
 interface AgentListProps {
   selectedAgent: number;
@@ -16,32 +18,93 @@ interface AgentListProps {
 const AgentList = ({ selectedAgent, onAgentChange, isCollapsed = false, onToggleCollapse }: AgentListProps) => {
   const navigate = useNavigate()
   
-  const [agents, setAgents] = useState([
-    { 
-      id: 1, 
-      name: 'HR', 
-      message: '当然，我可以为专业和友好的深度采访客户的人力资源相关问题，请随时提出您的问题，无论是关于招聘策略、薪酬福利、员工培训还是相关政策问题，我都会尽力为您提供帮助。请问您今天有需要咨询的内容？', 
-      time: '昨天', 
-      avatar: 'HR',
-      unreadCount: 0
-    },
-    { 
-      id: 2, 
-      name: 'DataEyes', 
-      message: '纯数据分析专家', 
-      time: '10:30', 
-      avatar: 'DE',
-      unreadCount: 2
-    },
-    { 
-      id: 3, 
-      name: '心理测评师小王', 
-      message: '专注心理测评与咨询服务', 
-      time: '09:15', 
-      avatar: 'XW',
-      unreadCount: 0
+  // 本地显示用的agent数据结构
+  interface LocalAgent {
+    id: number
+    name: string
+    message: string
+    time: string
+    avatar: string
+    unreadCount: number
+  }
+  
+  const [agents, setAgents] = useState<LocalAgent[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [hasLoaded, setHasLoaded] = useState(false) // 防止重复加载
+
+  // 将API返回的Agent数据转换为本地显示格式
+  const convertApiAgentToLocal = (apiAgent: Agent, index: number): LocalAgent => {
+    return {
+      id: index + 1, // 临时使用索引作为ID，实际应该使用API返回的唯一标识
+      name: apiAgent.agent_name,
+      message: apiAgent.description,
+      time: '在线', // API没有返回时间信息，使用默认值
+      avatar: apiAgent.agent_key.substring(0, 2).toUpperCase(),
+      unreadCount: 0 // 默认无未读消息
     }
-  ])
+  }
+
+  // 加载agents数据
+  const loadAgents = async () => {
+    // 防止重复请求
+    if (hasLoaded || loading) {
+      console.log('AgentList: 跳过重复请求，hasLoaded:', hasLoaded, 'loading:', loading)
+      return
+    }
+
+    try {
+      setLoading(true)
+      setError(null)
+      
+      console.log('AgentList: 开始请求agents列表')
+      const response = await agentsApi.getAgentsList()
+      const localAgents = response.agents.map(convertApiAgentToLocal)
+      
+      setAgents(localAgents)
+      setHasLoaded(true) // 标记已加载
+      console.log('AgentList: 成功加载agents列表:', response.agents.length, '个助手')
+    } catch (err) {
+      console.error('AgentList: 加载agents列表失败:', err)
+      setError(err instanceof Error ? err.message : '加载失败')
+      
+      // 发生错误时使用默认数据
+      setAgents([
+        { 
+          id: 1, 
+          name: 'HR', 
+          message: '当然，我可以为专业和友好的深度采访客户的人力资源相关问题，请随时提出您的问题，无论是关于招聘策略、薪酬福利、员工培训还是相关政策问题，我都会尽力为您提供帮助。请问您今天有需要咨询的内容？', 
+          time: '昨天', 
+          avatar: 'HR',
+          unreadCount: 0
+        },
+        { 
+          id: 2, 
+          name: 'DataEyes', 
+          message: '纯数据分析专家', 
+          time: '10:30', 
+          avatar: 'DE',
+          unreadCount: 2
+        },
+        { 
+          id: 3, 
+          name: '心理测评师小王', 
+          message: '专注心理测评与咨询服务', 
+          time: '09:15', 
+          avatar: 'XW',
+          unreadCount: 0
+        }
+      ])
+      setHasLoaded(true) // 即使失败也标记为已加载，避免无限重试
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // 组件挂载时加载数据
+  useEffect(() => {
+    loadAgents()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleAgentClick = (agentId: number) => {
     // 清除未读消息
@@ -91,6 +154,21 @@ const AgentList = ({ selectedAgent, onAgentChange, isCollapsed = false, onToggle
       {/* Agent列表 */}
       <div className="flex-1 overflow-y-auto">
         <div className="px-2 py-1">
+          {/* 加载状态 */}
+          {loading && !isCollapsed && (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-muted-foreground text-sm">加载中...</div>
+            </div>
+          )}
+          
+          {/* 错误状态 */}
+          {error && !loading && !isCollapsed && (
+            <div className="px-4 py-2 mb-2 bg-destructive/10 text-destructive text-sm rounded-lg">
+              加载失败: {error}
+            </div>
+          )}
+          
+          {/* Agent列表 */}
           {agents.map((agent) => (
             <div 
               key={agent.id} 

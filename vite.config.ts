@@ -13,11 +13,10 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/webapi': {
-        target: 'https://jirui.test.mgvai.cn',
+      '/api': {
+        target: 'http://192.168.10.19:8001/',
         changeOrigin: true,
-        secure: true,
-        rewrite: (path) => path.replace(/^\/webapi/, '/webapi')
+        secure: true
       }
     }
   }

@@ -30,29 +30,39 @@ export class ApiError extends Error {
   }
 }
 
-// 标准API响应格式
-export interface ApiResponse<T = unknown> {
-  data: T;
-  success: boolean;
-  message?: string;
-  error?: string;
-  timestamp?: string;
-}
-
-// 重新导出用户相关类型以保持向后兼容性
-export type { UserInfo } from '../types/user'
-
 // 通用错误处理函数
 const handleApiError = (error: unknown): ApiError => {
   if (axios.isAxiosError(error)) {
     const response = error.response;
     
     if (response) {
+      // 处理新的响应格式 {code, msg, results}
+      const responseData = response.data;
+      if (responseData && typeof responseData === 'object') {
+        // 新格式：{code, msg, results}
+        if ('code' in responseData && 'msg' in responseData) {
+          return new ApiError(
+            responseData.msg || error.message,
+            response.status,
+            responseData.code?.toString(),
+            responseData
+          );
+        }
+        // 兼容旧格式：{message, error, success}
+        if ('message' in responseData || 'error' in responseData) {
+          return new ApiError(
+            responseData.message || responseData.error || error.message,
+            response.status,
+            responseData.code?.toString(),
+            responseData
+          );
+        }
+      }
+      
       return new ApiError(
-        response.data?.message || response.data?.error || error.message,
+        error.message || '请求失败',
         response.status,
-        response.data?.code,
-        response.data
+        response.status.toString()
       );
     }
     
@@ -83,6 +93,8 @@ const createAxiosInstance = (config: ApiConfig): AxiosInstance => {
   // 请求拦截器
   instance.interceptors.request.use(
     (requestConfig) => {
+      // 添加用户ID到请求头，临时写死
+        requestConfig.headers["X-User-ID"] = "97772489-34af-4179-83ca-00993b382605"
       // 添加API Key到请求头
       if (config.apiKey) {
         requestConfig.headers.Authorization = `Bearer ${config.apiKey}`;
@@ -133,12 +145,12 @@ const createAxiosInstance = (config: ApiConfig): AxiosInstance => {
 };
 
 // Web API 客户端类
-class WebApiClient {
+export class WebApiClient {
   private axiosInstance: AxiosInstance;
 
   constructor() {
     this.axiosInstance = createAxiosInstance({
-      baseUrl: '/webapi',
+      baseUrl: '/api',
       timeout: 30000,
     });
     
@@ -156,24 +168,11 @@ class WebApiClient {
     delete this.axiosInstance.defaults.headers.common['Authorization'];
   }
 
-  // 获取用户信息
-  async getUserInfo(): Promise<UserInfo> {
-    try {
-      const response = await this.axiosInstance.get<ApiResponse<UserInfo>>('/profile/get');
-      if (response.data.success) {
-        return response.data.data;
-      }
-      throw new ApiError(response.data.message || '获取用户信息失败');
-    } catch (error) {
-      throw handleApiError(error);
-    }
-  }
-
   // 通用GET请求
   async get<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> {
     try {
-      const response = await this.axiosInstance.get<ApiResponse<T>>(url, config);
-      return (response.data.data || response.data) as T;
+      const response = await this.axiosInstance.get(url, config);
+      return this.handleResponse<T>(response.data);
     } catch (error) {
       throw handleApiError(error);
     }
@@ -182,8 +181,8 @@ class WebApiClient {
   // 通用POST请求
   async post<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
     try {
-      const response = await this.axiosInstance.post<ApiResponse<T>>(url, data, config);
-      return (response.data.data || response.data) as T;
+      const response = await this.axiosInstance.post(url, data, config);
+      return this.handleResponse<T>(response.data);
     } catch (error) {
       throw handleApiError(error);
     }
@@ -192,8 +191,8 @@ class WebApiClient {
   // 通用PUT请求
   async put<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
     try {
-      const response = await this.axiosInstance.put<ApiResponse<T>>(url, data, config);
-      return (response.data.data || response.data) as T;
+      const response = await this.axiosInstance.put(url, data, config);
+      return this.handleResponse<T>(response.data);
     } catch (error) {
       throw handleApiError(error);
     }
@@ -202,8 +201,59 @@ class WebApiClient {
   // 通用DELETE请求
   async delete<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> {
     try {
-      const response = await this.axiosInstance.delete<ApiResponse<T>>(url, config);
-      return (response.data.data || response.data) as T;
+      const response = await this.axiosInstance.delete(url, config);
+      return this.handleResponse<T>(response.data);
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  }
+
+  // 处理API响应格式
+  private handleResponse<T>(responseData: unknown): T {
+    // 检查是否是新的响应格式 {code, msg, results}
+    if (responseData && typeof responseData === 'object') {
+      const data = responseData as Record<string, unknown>;
+      
+      // 新格式：{code, msg, results}
+      if ('code' in data && 'msg' in data && 'results' in data) {
+        // 检查响应是否成功
+        if (data.code === 200) {
+          return data.results as T;
+        } else {
+          // 响应失败，抛出错误
+          throw new ApiError(
+            data.msg as string || '请求失败',
+            0,
+            data.code?.toString() || 'API_ERROR',
+            data
+          );
+        }
+      }
+      
+      // 兼容旧格式：{data, success}
+      if ('data' in data && 'success' in data) {
+        if (data.success) {
+          return data.data as T;
+        } else {
+          throw new ApiError(
+            (data.message as string) || (data.error as string) || '请求失败',
+            0,
+            'API_ERROR',
+            data
+          );
+        }
+      }
+    }
+    
+    // 如果不是标准格式，直接返回原始数据
+    return responseData as T;
+  }
+
+  // 获取用户信息
+  async getUserInfo(): Promise<UserInfo> {
+    try {
+      // 使用统一的get方法，会自动处理响应格式
+      return await this.get<UserInfo>('/profile/get');
     } catch (error) {
       throw handleApiError(error);
     }
@@ -211,7 +261,7 @@ class WebApiClient {
 }
 
 // 智谱AI客户端类（保留原有功能）
-class ZhipuApiClient {
+export class ZhipuApiClient {
   private axiosInstance: AxiosInstance;
   private config: ApiConfig;
 
@@ -260,16 +310,6 @@ class ZhipuApiClient {
   async delete<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> {
     return this.request<T>(url, { ...config, method: 'DELETE' });
   }
-}
-
-// 创建客户端实例
-export const webApiClient = new WebApiClient();
-export const zhipuApiClient = new ZhipuApiClient();
-
-// 获取环境变量中的API Key（如果有的话）
-const apiKey = import.meta.env.VITE_ZHIPU_API_KEY;
-if (apiKey) {
-  zhipuApiClient.setApiKey(apiKey);
 }
 
 // Session Cookie 配置
@@ -343,7 +383,6 @@ export const SessionManager = {
       path: this.config.defaultOptions.path,
       domain: this.config.defaultOptions.domain
     });
-    webApiClient.clearAuthToken();
     console.log(`Session cookie cleared: ${this.config.cookieName}`);
   },
 
@@ -382,6 +421,16 @@ export const SessionManager = {
     }
   }
 };
+
+// 创建客户端实例
+export const webApiClient = new WebApiClient();
+export const zhipuApiClient = new ZhipuApiClient();
+
+// 获取环境变量中的API Key（如果有的话）
+const apiKey = import.meta.env.VITE_ZHIPU_API_KEY;
+if (apiKey) {
+  zhipuApiClient.setApiKey(apiKey);
+}
 
 // 导出类型声明，扩展axios类型
 declare module 'axios' {

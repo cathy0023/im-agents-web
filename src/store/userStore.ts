@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { SessionManager } from '../lib/api'
+import { SessionManager } from '../api'
 import type { UserInfo } from '../types/user'
 
 interface UserState {
