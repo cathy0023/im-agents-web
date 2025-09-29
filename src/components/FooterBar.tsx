@@ -4,7 +4,7 @@ import MessageInput from './MessageInput'
 
 interface FooterBarProps {
   mode?: 'hr' | 'dataEyes';
-  selectedAgent?: number;
+  selectedAgent?: string;
   showInput?: boolean;
   showActions?: boolean;
   inputPlaceholder?: string;
@@ -12,19 +12,19 @@ interface FooterBarProps {
 
 const FooterBar = ({ 
   mode = 'hr', 
-  selectedAgent = 1, 
+  selectedAgent: _selectedAgent = '', 
   showInput = true, 
   showActions = false,
   inputPlaceholder 
 }: FooterBarProps) => {
   const getDefaultPlaceholder = () => {
-    return mode === 'dataEyes' || selectedAgent === 2 ? "请输入数据分析需求..." : "请输入HR相关问题..."
+    return mode === 'dataEyes' ? "请输入数据分析需求..." : "请输入HR相关问题..."
   }
 
   const placeholder = inputPlaceholder || getDefaultPlaceholder()
 
   return (
-    <div className="bg-muted/5 backdrop-blur-sm border-t border-border/10">
+    <div className="bg-muted/5 backdrop-blur-sm">
       {/* 输入区域 */}
       {showInput && (
         <div className="p-6">

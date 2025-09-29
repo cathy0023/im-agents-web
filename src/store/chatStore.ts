@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { createZhipuChatStream } from '../lib/sse';
 import type { ChatMessage } from '../types/chat';
 import type { DataEyesConfig } from '../types/dataEyes';
+import type { ChatWebSocketMessage } from '../types/websocket';
+import type { HistoryMessage } from '../types/conversation';
 
 // 消息接口
 export interface Message {
@@ -10,7 +12,7 @@ export interface Message {
   role: 'user' | 'assistant' | 'system';
   timestamp: number;
   isStreaming?: boolean;
-  agentId?: number;
+  agentId?: string;
 }
 
 // 聊天状态接口
@@ -24,7 +26,10 @@ export interface ChatState {
   // AI配置
   apiKey: string;
   selectedModel: string;
-  selectedAgent: number;
+  selectedAgent: string;
+  
+  // 会话管理
+  conversationId: string | null;
   
   // 错误处理
   error: string | null;
@@ -39,11 +44,14 @@ export interface ChatState {
   clearMessages: () => void;
   setApiKey: (apiKey: string) => void;
   setSelectedModel: (model: string) => void;
-  setSelectedAgent: (agentId: number) => void;
+  setSelectedAgent: (agentId: string) => void;
+  setConversationId: (conversationId: string | null) => void;
   setError: (error: string | null) => void;
   addMessage: (message: Omit<Message, 'id' | 'timestamp'>) => void;
   updateMessage: (id: string, updates: Partial<Message>) => void;
-  clearAgentMessages: (agentId: number) => void;
+  clearAgentMessages: (agentId: string) => void;
+  addWebSocketMessage: (wsMessage: ChatWebSocketMessage) => void;
+  addHistoryMessages: (historyMessages: HistoryMessage[], agentId: string) => void;
   
   // DataEyes 专用操作
   toggleDataEyesChat: () => void;
@@ -93,7 +101,8 @@ export const useChatStore = create<ChatState>((set, get) => {
     isStreaming: false,
     apiKey: localStorage.getItem('zhipu_api_key') || '596a400896fb4523a42fc3a6225c5808.iNBj9VvsNNrnMpK9',
     selectedModel: 'glm-4',
-    selectedAgent: 1,
+    selectedAgent: '',
+    conversationId: null,
     error: null,
     
     // DataEyes 初始配置
@@ -152,8 +161,8 @@ export const useChatStore = create<ChatState>((set, get) => {
       });
 
       try {
-        // 准备聊天消息
-        const agentConfig = AGENT_CONFIGS[selectedAgent as keyof typeof AGENT_CONFIGS];
+        // 准备聊天消息 - 使用默认配置，因为现在 selectedAgent 是 UUID
+        const agentConfig = AGENT_CONFIGS[1]; // 使用默认配置
         const chatMessages: ChatMessage[] = [
           {
             role: 'system',
@@ -262,8 +271,13 @@ export const useChatStore = create<ChatState>((set, get) => {
     },
 
     // 设置Agent
-    setSelectedAgent: (agentId: number) => {
+    setSelectedAgent: (agentId: string) => {
       set({ selectedAgent: agentId });
+    },
+
+    // 设置会话ID
+    setConversationId: (conversationId: string | null) => {
+      set({ conversationId });
     },
 
     // 设置错误
@@ -292,10 +306,111 @@ export const useChatStore = create<ChatState>((set, get) => {
     },
 
     // 清空指定Agent的消息
-    clearAgentMessages: (agentId: number) => {
+    clearAgentMessages: (agentId: string) => {
       const state = get();
       const filteredMessages = state.messages.filter(msg => msg.agentId !== agentId);
       set({ messages: filteredMessages });
+    },
+
+    // 添加WebSocket消息到聊天记录
+    addWebSocketMessage: (wsMessage: ChatWebSocketMessage) => {
+      const state = get();
+      
+      // 将WebSocket消息转换为聊天消息格式
+      const chatMessage: Message = {
+        id: wsMessage.id,
+        content: wsMessage.data.content,
+        role: wsMessage.data.role,
+        timestamp: wsMessage.timestamp,
+        agentId: wsMessage.data.agentId?.toString() || state.selectedAgent,
+        isStreaming: false
+      };
+
+      console.log('ChatStore: 添加WebSocket消息到聊天记录:', {
+        messageId: chatMessage.id,
+        role: chatMessage.role,
+        agentId: chatMessage.agentId,
+        contentLength: chatMessage.content.length,
+        timestamp: new Date(chatMessage.timestamp).toLocaleString()
+      });
+
+      set({ 
+        messages: [...state.messages, chatMessage],
+        error: null // 清除之前的错误
+      });
+    },
+
+    // 添加历史消息到聊天记录
+    addHistoryMessages: (historyMessages: HistoryMessage[], agentId: string) => {
+      const state = get();
+      const convertedMessages: Message[] = [];
+      
+      console.log('ChatStore: 开始处理历史消息，消息数量:', historyMessages.length);
+      
+      // 按对话分组处理历史消息
+      let currentConversation: HistoryMessage[] = [];
+      
+      historyMessages.forEach((historyMsg, index) => {
+        if (historyMsg.type === 'begin') {
+          // 开始新的对话
+          currentConversation = [historyMsg];
+        } else if (historyMsg.type === 'end') {
+          // 结束当前对话，处理整个对话
+          currentConversation.push(historyMsg);
+          
+          // 处理当前对话中的消息
+          const conversationMessages = currentConversation.filter(msg => msg.type === 'message');
+          conversationMessages.forEach(msg => {
+            const chatMessage: Message = {
+              id: msg.message_id || `history-${msg.conversation_uuid}-${msg.timestamp}`,
+              content: msg.content,
+              role: msg.sender_type === 'user' ? 'user' : 'assistant',
+              timestamp: msg.timestamp * 1000, // 转换为毫秒
+              agentId: agentId,
+              isStreaming: false
+            };
+            convertedMessages.push(chatMessage);
+          });
+          
+          // 添加对话分割标记（如果不是最后一个对话）
+          if (index < historyMessages.length - 1) {
+            const beginMessage = currentConversation.find(msg => msg.type === 'begin');
+            if (beginMessage) {
+              const separatorMessage: Message = {
+                id: `separator-${beginMessage.conversation_uuid}-${beginMessage.timestamp}`,
+                content: new Date(beginMessage.timestamp * 1000).toLocaleString('zh-CN', {
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  hour12: false
+                }).replace(/\//g, '-'),
+                role: 'system',
+                timestamp: beginMessage.timestamp * 1000,
+                agentId: agentId,
+                isStreaming: false
+              };
+              convertedMessages.push(separatorMessage);
+            }
+          }
+          
+          currentConversation = [];
+        } else if (historyMsg.type === 'message') {
+          // 添加到当前对话
+          currentConversation.push(historyMsg);
+        }
+      });
+      
+      console.log('ChatStore: 历史消息转换完成，转换后消息数量:', convertedMessages.length);
+      
+      // 清除该agent的现有消息，然后添加历史消息
+      const filteredMessages = state.messages.filter(msg => msg.agentId !== agentId);
+      
+      set({ 
+        messages: [...filteredMessages, ...convertedMessages],
+        error: null
+      });
     },
     
     // DataEyes 专用操作方法

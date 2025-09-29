@@ -30,13 +30,29 @@ export interface GetAgentsListResponse {
 // 获取Agent详情响应类型
 export type GetAgentDetailResponse = Agent
 
+// 导入会话相关类型
+import type { 
+  ApiCreateConversationRequest,
+  ApiCreateConversationResponse,
+  ApiConversationInfo,
+  ConversationStatus,
+  GetHistoryMessagesResponse
+} from '@/types/conversation'
+
+// 重新导出会话相关类型
+export type CreateConversationRequest = ApiCreateConversationRequest
+export type CreateConversationResponse = ApiCreateConversationResponse
+export type { ApiConversationInfo, ConversationStatus, GetHistoryMessagesResponse }
+
 // API端点定义
 export const AGENTS_ENDPOINTS = {
   LIST: '/v1/websocket/agents',
   DETAIL: '/v1/agents/{agent_id}',
   CREATE: '/v1/agents',
   UPDATE: '/v1/agents/{agent_id}',
-  DELETE: '/v1/agents/{agent_id}'
+  DELETE: '/v1/agents/{agent_id}',
+  CREATE_CONVERSATION: '/v1/websocket/agent/conversation/create',
+  GET_HISTORY: '/v1/websocket/agent/history'
 } as const;
 
 // Agents业务服务类
@@ -167,6 +183,72 @@ export class AgentsService {
       throw error;
     }
   }
+
+  /**
+   * 创建与指定Agent的会话
+   * @param agentKey - Agent的key
+   * @param agentUuid - Agent的UUID
+   * @returns Promise<CreateConversationResponse>
+   */
+  async createConversation(agentKey: string, agentUuid: string): Promise<CreateConversationResponse> {
+    try {
+      const requestData: CreateConversationRequest = {
+        agent_key: agentKey,
+        agent_uuid: agentUuid
+      };
+      
+      console.log('AgentsService: 创建会话请求:', requestData);
+      
+      const response = await webApiClient.post<CreateConversationResponse>(
+        AGENTS_ENDPOINTS.CREATE_CONVERSATION,
+        requestData
+      );
+      
+      console.log('AgentsService: 创建会话成功:', response);
+      
+      // 验证响应数据结构
+      if (response && typeof response === 'object' && 'conversation_id' in response) {
+        return response;
+      }
+      
+      throw new Error('Invalid response format from create conversation API');
+    } catch (error) {
+      console.error('Failed to create conversation:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 获取Agent的历史消息
+   * @param agentUuid - Agent的UUID
+   * @returns Promise<GetHistoryMessagesResponse>
+   */
+  async getAgentHistory(agentUuid: string): Promise<GetHistoryMessagesResponse> {
+    try {
+      console.log('AgentsService: 获取历史消息，agent_uuid:', agentUuid);
+      
+      const response = await webApiClient.get<GetHistoryMessagesResponse>(
+        AGENTS_ENDPOINTS.GET_HISTORY,
+        {
+          params: {
+            agent_uuid: agentUuid
+          }
+        }
+      );
+      
+      console.log('AgentsService: 获取历史消息成功:', response);
+      
+      // 验证响应数据结构
+      if (response && typeof response === 'object' && 'data' in response && Array.isArray(response.data)) {
+        return response;
+      }
+      
+      throw new Error('Invalid response format from get history API');
+    } catch (error) {
+      console.error('Failed to get agent history:', error);
+      throw error;
+    }
+  }
 }
 
 // 创建并导出agents服务实例
@@ -179,7 +261,11 @@ export const agentsApi = {
   createAgent: (agentData: Omit<Agent, 'uuid'>) => agentsService.createAgent(agentData),
   updateAgent: (agentId: string, updateData: Partial<Agent>) => 
     agentsService.updateAgent(agentId, updateData),
-  deleteAgent: (agentId: string) => agentsService.deleteAgent(agentId)
+  deleteAgent: (agentId: string) => agentsService.deleteAgent(agentId),
+  createConversation: (agentKey: string, agentUuid: string) => 
+    agentsService.createConversation(agentKey, agentUuid),
+  getAgentHistory: (agentUuid: string) => 
+    agentsService.getAgentHistory(agentUuid)
 };
 
 // 默认导出

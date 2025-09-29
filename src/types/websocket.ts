@@ -40,12 +40,28 @@ export interface SystemWebSocketMessage extends BaseWebSocketMessage {
   }
 }
 
-// 心跳消息
+// 心跳消息 - 发送给后端的ping
 export interface HeartbeatWebSocketMessage extends BaseWebSocketMessage {
   type: 'heartbeat'
-  data: {
-    ping: boolean
+  message: {
+    data: {
+      content: 'ping'
+    }
   }
+}
+
+// 心跳响应消息 - 后端返回的pong
+export interface HeartbeatResponseMessage extends BaseWebSocketMessage {
+  type: 'heartbeat'
+  message: {
+    data: {
+      content: 'pong',
+      timestamp: number
+    }
+  }
+  id: string
+  status: 'finish'
+  component_name: string
 }
 
 // 错误消息
@@ -73,6 +89,7 @@ export type WebSocketMessage =
   | ChatWebSocketMessage
   | SystemWebSocketMessage
   | HeartbeatWebSocketMessage
+  | HeartbeatResponseMessage
   | ErrorWebSocketMessage
   | ComponentRenderMessage
 
@@ -126,7 +143,14 @@ export function isSystemMessage(message: unknown): message is SystemWebSocketMes
 
 export function isHeartbeatMessage(message: unknown): message is HeartbeatWebSocketMessage {
   return typeof message === 'object' && message !== null && 
-    (message as WebSocketMessage)?.type === 'heartbeat'
+    (message as WebSocketMessage)?.type === 'heartbeat' &&
+    (message as HeartbeatWebSocketMessage)?.message?.data?.content === 'ping'
+}
+
+export function isHeartbeatResponseMessage(message: unknown): message is HeartbeatResponseMessage {
+  return typeof message === 'object' && message !== null && 
+    (message as WebSocketMessage)?.type === 'heartbeat' &&
+    (message as HeartbeatResponseMessage)?.message?.data?.content === 'pong'
 }
 
 export function isErrorMessage(message: unknown): message is ErrorWebSocketMessage {

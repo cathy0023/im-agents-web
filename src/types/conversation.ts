@@ -58,3 +58,58 @@ export interface ConversationFilter {
   status?: 'active' | 'archived'
   hasUnread?: boolean
 }
+
+// API会话相关类型 (与后端API对应)
+export interface ApiConversationInfo {
+  display_name: string;
+  user_id: string;
+  org_legal_id: number;
+  agent_type: string;
+  agent_uuid: string;
+  status: string;
+  created_at: string;
+  last_activity: string;
+  message_count: number;
+  timeout_seconds: number;
+  conversation_id: string;
+}
+
+// API创建会话请求
+export interface ApiCreateConversationRequest {
+  agent_key: string;
+  agent_uuid: string;
+}
+
+// API创建会话响应
+export interface ApiCreateConversationResponse {
+  conversation_id: string;
+  action: string;
+  message: string;
+  conversation_info: ApiConversationInfo;
+}
+
+// 会话状态
+export type ConversationStatus = 'active' | 'inactive' | 'timeout' | 'ended'
+
+// 历史消息类型定义
+export interface HistoryMessage {
+  conversation_uuid: string;
+  type: 'begin' | 'message' | 'end';
+  content: string;
+  sender_type: string;
+  sender_name: string;
+  timestamp: number;
+  message_id: string;
+}
+
+// 获取历史消息响应类型
+export interface GetHistoryMessagesResponse {
+  user_id: string;
+  agent_uuid: string;
+  agent_type: string;
+  data: HistoryMessage[];
+  total_count: number;
+  has_more: boolean;
+  next_cursor: string | null;
+  timestamp: number;
+}

@@ -8,7 +8,7 @@ export interface DataEyesConfig {
 }
 
 export interface DataEyesLayoutProps {
-  agentId: number
+  agentId: string
   chatEnabled?: boolean
   className?: string
   chatBubblePosition?: 'bottom-left' | 'bottom-side-left'

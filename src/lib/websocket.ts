@@ -5,6 +5,7 @@ import type {
   WebSocketConnectionStatus,
   HeartbeatWebSocketMessage
 } from '@/types/websocket'
+import { isHeartbeatResponseMessage } from '@/types/websocket'
 
 /**
  * WebSocket 单例管理器
@@ -314,9 +315,15 @@ export class WebSocketManager {
     console.groupEnd()
     
     if (message) {
-      // 处理心跳响应
-      if (message.type === 'heartbeat') {
-        console.log('💓 [WebSocket 心跳响应]', message)
+      // 处理心跳响应 - 检查是否是pong消息
+      if (isHeartbeatResponseMessage(message)) {
+        console.log('💓 [WebSocket 心跳响应] 收到pong消息', {
+          时间: new Date().toLocaleString(),
+          消息ID: message.id,
+          状态: message.status,
+          组件名: message.component_name,
+          时间戳: message.message.data.timestamp
+        })
         this.handleHeartbeatResponse()
         return
       }
@@ -368,14 +375,18 @@ export class WebSocketManager {
       id: Date.now().toString(),
       type: 'heartbeat',
       timestamp: Date.now(),
-      data: {
-        ping: true
+      message: {
+        data: {
+          content: 'ping'
+        }
       }
     }
 
     console.log('💓 [WebSocket 发送心跳]', {
       时间: new Date().toLocaleString(),
-      消息: heartbeatMessage,
+      消息ID: heartbeatMessage.id,
+      消息类型: heartbeatMessage.type,
+      内容: heartbeatMessage.message.data.content,
       超时设置: `${this.config.heartbeat.timeout}ms`
     })
 

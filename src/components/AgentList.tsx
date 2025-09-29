@@ -1,129 +1,170 @@
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getAgentById } from '../types/router'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { useChatStore } from '@/store/chatStore'
+import { useAgentsStore } from '@/store/agentsStore'
 import { agentsApi } from '@/api'
 import type { Agent } from '@/api'
 
 interface AgentListProps {
-  selectedAgent: number;
-  onAgentChange: (agentId: number) => void;
+  selectedAgentKey: string;
+  onAgentChange: (agentKey: string) => void;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
 }
 
-const AgentList = ({ selectedAgent, onAgentChange, isCollapsed = false, onToggleCollapse }: AgentListProps) => {
+const AgentList = ({ selectedAgentKey, onAgentChange, isCollapsed = false, onToggleCollapse }: AgentListProps) => {
   const navigate = useNavigate()
+  const { setConversationId, setError: setChatError, addHistoryMessages } = useChatStore()
+  const { agents: apiAgents, loading, error, hasLoaded, loadAgents } = useAgentsStore()
   
   // 本地显示用的agent数据结构
   interface LocalAgent {
-    id: number
+    agent_key: string
     name: string
     message: string
     time: string
     avatar: string
     unreadCount: number
+    // 添加API数据引用，用于创建会话
+    apiAgent: Agent
   }
   
-  const [agents, setAgents] = useState<LocalAgent[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [hasLoaded, setHasLoaded] = useState(false) // 防止重复加载
+  const [localAgents, setLocalAgents] = useState<LocalAgent[]>([])
+  const [conversationCreatedFor, setConversationCreatedFor] = useState<string | null>(null) // 跟踪已创建会话的agent key
 
   // 将API返回的Agent数据转换为本地显示格式
-  const convertApiAgentToLocal = (apiAgent: Agent, index: number): LocalAgent => {
+  const convertApiAgentToLocal = useCallback((apiAgent: Agent): LocalAgent => {
+    console.log('AgentList: 转换API Agent到本地格式:', {
+      agent_key: apiAgent.agent_key,
+      agent_name: apiAgent.agent_name,
+      agent_type: apiAgent.agent_type,
+      uuid: apiAgent.uuid
+    });
+    
     return {
-      id: index + 1, // 临时使用索引作为ID，实际应该使用API返回的唯一标识
+      agent_key: apiAgent.agent_key,
       name: apiAgent.agent_name,
       message: apiAgent.description,
       time: '在线', // API没有返回时间信息，使用默认值
       avatar: apiAgent.agent_key.substring(0, 2).toUpperCase(),
-      unreadCount: 0 // 默认无未读消息
+      unreadCount: 0, // 默认无未读消息
+      apiAgent: apiAgent // 保存完整的API数据
     }
-  }
+  }, [])
 
-  // 加载agents数据
-  const loadAgents = async () => {
-    // 防止重复请求
-    if (hasLoaded || loading) {
-      console.log('AgentList: 跳过重复请求，hasLoaded:', hasLoaded, 'loading:', loading)
+  // 当 API agents 数据变化时，转换为本地格式
+  useEffect(() => {
+    if (apiAgents.length > 0) {
+      const convertedAgents = apiAgents.map(convertApiAgentToLocal)
+      console.log('AgentList: 转换API agents到本地格式:', convertedAgents)
+      setLocalAgents(convertedAgents)
+      setConversationCreatedFor(null) // 重置会话创建状态
+    }
+  }, [apiAgents, convertApiAgentToLocal])
+
+  // 创建会话的独立函数
+  const createConversationForAgent = async (agentData: LocalAgent, forceCreate = false) => {
+    console.log('AgentList: 准备创建会话，agentData:', agentData)
+
+    // 只有agent_type为conversation时才创建会话
+    console.log('AgentList: 检查agent_type:', agentData.apiAgent.agent_type)
+    
+    if (agentData.apiAgent.agent_type !== 'conversation') {
+      console.log('AgentList: agent_type不是conversation，跳过创建会话，agent_type:', agentData.apiAgent.agent_type)
+      // 如果切换到非conversation类型的agent，清除之前的会话状态
+      if (conversationCreatedFor !== null) {
+        setConversationId(null)
+        setConversationCreatedFor(null)
+        console.log('AgentList: 切换到非conversation类型agent，清除会话状态')
+      }
+      return
+    }
+
+    // 检查是否已经为这个agent创建过会话（除非强制创建）
+    if (!forceCreate && conversationCreatedFor === agentData.agent_key) {
+      console.log('AgentList: 已经为agent', agentData.agent_key, '创建过会话，跳过重复创建')
       return
     }
 
     try {
-      setLoading(true)
-      setError(null)
+      console.log('AgentList: 创建会话，agent_key:', agentData.apiAgent.agent_key, 'agent_uuid:', agentData.apiAgent.uuid, 'agent_type:', agentData.apiAgent.agent_type)
       
-      console.log('AgentList: 开始请求agents列表')
-      const response = await agentsApi.getAgentsList()
-      const localAgents = response.agents.map(convertApiAgentToLocal)
-      
-      setAgents(localAgents)
-      setHasLoaded(true) // 标记已加载
-      console.log('AgentList: 成功加载agents列表:', response.agents.length, '个助手')
-    } catch (err) {
-      console.error('AgentList: 加载agents列表失败:', err)
-      setError(err instanceof Error ? err.message : '加载失败')
-      
-      // 发生错误时使用默认数据
-      setAgents([
-        { 
-          id: 1, 
-          name: 'HR', 
-          message: '当然，我可以为专业和友好的深度采访客户的人力资源相关问题，请随时提出您的问题，无论是关于招聘策略、薪酬福利、员工培训还是相关政策问题，我都会尽力为您提供帮助。请问您今天有需要咨询的内容？', 
-          time: '昨天', 
-          avatar: 'HR',
-          unreadCount: 0
-        },
-        { 
-          id: 2, 
-          name: 'DataEyes', 
-          message: '纯数据分析专家', 
-          time: '10:30', 
-          avatar: 'DE',
-          unreadCount: 2
-        },
-        { 
-          id: 3, 
-          name: '心理测评师小王', 
-          message: '专注心理测评与咨询服务', 
-          time: '09:15', 
-          avatar: 'XW',
-          unreadCount: 0
-        }
+      // 并行执行创建会话和获取历史消息
+      const [conversationResponse, historyResponse] = await Promise.allSettled([
+        agentsApi.createConversation(
+          agentData.apiAgent.agent_key,
+          agentData.apiAgent.uuid
+        ),
+        agentsApi.getAgentHistory(agentData.apiAgent.uuid)
       ])
-      setHasLoaded(true) // 即使失败也标记为已加载，避免无限重试
-    } finally {
-      setLoading(false)
+      
+      // 处理会话创建结果
+      if (conversationResponse.status === 'fulfilled') {
+        // 保存conversation_id到store
+        setConversationId(conversationResponse.value.conversation_id)
+        setConversationCreatedFor(agentData.agent_key) // 标记已为此agent创建会话
+        console.log('AgentList: 会话创建成功，conversation_id:', conversationResponse.value.conversation_id, 'for agent:', agentData.agent_key)
+      } else {
+        console.error('AgentList: 创建会话失败:', conversationResponse.reason)
+        setChatError(conversationResponse.reason instanceof Error ? conversationResponse.reason.message : '创建会话失败')
+      }
+      
+      // 处理历史消息获取结果
+      if (historyResponse.status === 'fulfilled') {
+        console.log('AgentList: 获取历史消息成功，消息数量:', historyResponse.value.data.length)
+        // 将历史消息添加到聊天记录中 - 使用uuid作为agentId
+        addHistoryMessages(historyResponse.value.data, agentData.apiAgent.uuid)
+      } else {
+        console.warn('AgentList: 获取历史消息失败:', historyResponse.reason)
+        // 历史消息获取失败不影响会话创建，只记录警告
+      }
+      
+    } catch (error) {
+      console.error('AgentList: 创建会话或获取历史消息失败:', error)
+      setChatError(error instanceof Error ? error.message : '创建会话失败')
     }
   }
 
-  // 组件挂载时加载数据
+  // 组件挂载时确保数据已加载
   useEffect(() => {
-    loadAgents()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    if (!hasLoaded) {
+      loadAgents()
+    }
+  }, [hasLoaded, loadAgents])
 
-  const handleAgentClick = (agentId: number) => {
+  // 当agents加载完成且有selectedAgentKey时，为默认选中的agent创建会话
+  useEffect(() => {
+    console.log('AgentList: useEffect触发，hasLoaded:', hasLoaded, 'localAgents:', localAgents, 'selectedAgentKey:', selectedAgentKey)
+    if (hasLoaded && localAgents.length > 0 && selectedAgentKey) {
+      const defaultAgent = localAgents.find(agent => agent.agent_key === selectedAgentKey)
+      console.log('AgentList: 找到默认agent:', defaultAgent)
+      if (defaultAgent) {
+        console.log('AgentList: 准备为默认agent创建会话，agent_type:', defaultAgent.apiAgent.agent_type)
+        createConversationForAgent(defaultAgent)
+      }
+    }
+  }, [hasLoaded, localAgents, selectedAgentKey]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleAgentClick = (agentKey: string) => {
     // 清除未读消息
-    setAgents(prevAgents => 
+    setLocalAgents(prevAgents => 
       prevAgents.map(agent => 
-        agent.id === agentId 
+        agent.agent_key === agentKey 
           ? { ...agent, unreadCount: 0 }
           : agent
       )
     )
     
-    // 使用路由导航替代回调
-    const agent = getAgentById(agentId)
-    if (agent) {
-      navigate(agent.route)
-    }
-    // 保持向后兼容
-    onAgentChange(agentId)
-    console.log('Selected agent:', agentId)
+    // 直接使用 agent_key 作为路由参数
+    navigate(`/messages/${agentKey}`)
+    
+    // 回调通知父组件
+    onAgentChange(agentKey)
+    console.log('Selected agent:', agentKey)
   }
 
   return (
@@ -169,16 +210,16 @@ const AgentList = ({ selectedAgent, onAgentChange, isCollapsed = false, onToggle
           )}
           
           {/* Agent列表 */}
-          {agents.map((agent) => (
+          {localAgents.map((agent) => (
             <div 
-              key={agent.id} 
-              onClick={() => handleAgentClick(agent.id)}
+              key={agent.agent_key} 
+              onClick={() => handleAgentClick(agent.agent_key)}
               className={`flex items-center px-4 py-4 cursor-pointer transition-all duration-200 rounded-xl mb-2 ${
                 isCollapsed 
                   ? 'justify-center' 
                   : 'space-x-3'
               } ${
-                selectedAgent === agent.id 
+                selectedAgentKey === agent.agent_key 
                   ? 'bg-background/80 shadow-sm ring-1 ring-primary/20' 
                   : 'hover:bg-background/40 hover:shadow-sm'
               }`}
@@ -209,7 +250,7 @@ const AgentList = ({ selectedAgent, onAgentChange, isCollapsed = false, onToggle
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
                         <h3 className={`text-sm font-medium truncate ${
-                          selectedAgent === agent.id ? 'text-primary' : 'text-foreground'
+                          selectedAgentKey === agent.agent_key ? 'text-primary' : 'text-foreground'
                         }`}>
                           {agent.name}
                         </h3>

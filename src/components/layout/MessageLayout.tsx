@@ -1,23 +1,55 @@
 import { useParams, Navigate } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import ChatArea from '../ChatArea'
 import SettingsPanel from '../SettingsPanel'
 import AgentList from '../AgentList'
 import FooterBar from '../FooterBar'
 import DataEyesLayout from './DataEyesLayout'
-import { getAgentByRoute, getDefaultAgent, type Agent } from '../../types/router'
+import { useWebSocketChatIntegration } from '../../hooks/useWebSocketChatIntegration'
+import { useAgentsStore } from '@/store/agentsStore'
 
 const MessageLayout = () => {
-  const { agentType } = useParams<{ agentType: string }>()
+  const { agentKey } = useParams<{ agentKey: string }>()
   const [isSettingsPanelVisible, setIsSettingsPanelVisible] = useState(false)
   const [isAgentListCollapsed, setIsAgentListCollapsed] = useState(false)
-  const currentAgent: Agent | null = agentType ? getAgentByRoute(agentType) : null
   
-  // 如果找不到智能体，重定向到默认智能体
-  if (!currentAgent) {
-    const defaultAgent = getDefaultAgent()
-    return <Navigate to={defaultAgent.route} replace />
+  // 使用 agents store
+  const { loading, hasLoaded, loadAgents, getAgentByKey } = useAgentsStore()
+  
+  // 启用WebSocket聊天集成
+  useWebSocketChatIntegration()
+  
+  // 确保 agents 数据已加载
+  useEffect(() => {
+    if (!hasLoaded) {
+      loadAgents()
+    }
+  }, [hasLoaded, loadAgents])
+  
+  // 获取当前 agent
+  const currentApiAgent = agentKey ? getAgentByKey(agentKey) : null
+  
+  // 如果没有agentKey，重定向到默认路由
+  if (!agentKey) {
+    return <Navigate to="/" replace />
   }
+  
+  // 加载中状态
+  if (loading || !hasLoaded) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-background">
+        <div className="text-muted-foreground">加载中...</div>
+      </div>
+    )
+  }
+  
+  // 如果找不到对应的agent，重定向到默认路由
+  if (!currentApiAgent) {
+    console.warn('MessageLayout: 找不到对应的agent，agentKey:', agentKey)
+    return <Navigate to="/" replace />
+  }
+  
+  console.log('MessageLayout: 当前agent:', currentApiAgent)
 
   const handleToggleAgentList = () => {
     setIsAgentListCollapsed(!isAgentListCollapsed)
@@ -29,52 +61,29 @@ const MessageLayout = () => {
   //   clearAgentMessages(currentAgent.id)
   // }
 
-  // 获取内容区域布局
+  // 获取内容区域布局 - 根据 agent_type 决定
   const getContentLayout = () => {
-    switch(currentAgent.id) {
-      case 1: 
-        // HR智能助手：纯聊天布局 + 输入框
-        return (
-          <div className="flex-1 flex flex-col h-full">
-            <div className="flex-1 overflow-hidden">
-              <ChatArea selectedAgent={currentAgent.id} />
-            </div>
-            <FooterBar 
-              mode="hr" 
-              selectedAgent={currentAgent.id}
-              showInput={true}
-              showActions={true}
-            />
-          </div>
-        )
-      case 2:
-        // DataEyes：agentsList + dataEyesLayout
-        return <DataEyesLayout agentId={currentAgent.id} isAgentListCollapsed={isAgentListCollapsed} />
-      case 3:
-        // 心理测评师：纯聊天布局 + 输入框
-        return (
-          <div className="flex-1 flex flex-col h-full">
-            <div className="flex-1 overflow-hidden">
-              <ChatArea selectedAgent={currentAgent.id} />
-            </div>
-            <FooterBar 
-              mode="hr" 
-              selectedAgent={currentAgent.id}
-              showInput={true}
-              showActions={false}
-            />
-          </div>
-        )
+    const agentType = currentApiAgent?.agent_type || 'conversation'
+    const agentUuid = currentApiAgent?.uuid || ''
+    
+    console.log('MessageLayout: 根据agent_type决定布局:', agentType, 'uuid:', agentUuid)
+    
+    switch(agentType) {
+      case 'list':
+        // agent_type 为 list：DataEyes 布局
+        return <DataEyesLayout agentId={agentUuid} isAgentListCollapsed={isAgentListCollapsed} />
+      
+      case 'conversation':
       default:
-        // 默认：纯聊天布局
+        // agent_type 为 conversation 或默认：纯聊天布局 + 输入框
         return (
           <div className="flex-1 flex flex-col h-full">
             <div className="flex-1 overflow-hidden">
-              <ChatArea selectedAgent={currentAgent.id} />
+              <ChatArea selectedAgent={agentUuid} />
             </div>
             <FooterBar 
               mode="hr" 
-              selectedAgent={currentAgent.id}
+              selectedAgent={agentUuid}
               showInput={true}
               showActions={false}
             />
@@ -88,7 +97,7 @@ const MessageLayout = () => {
       <div className="flex-1 flex overflow-hidden">
         {/* 左侧AgentList - 所有模式都显示 */}
         <AgentList 
-          selectedAgent={currentAgent.id} 
+          selectedAgentKey={currentApiAgent?.agent_key || ''} 
           onAgentChange={() => {}} // 路由模式下不需要回调
           isCollapsed={isAgentListCollapsed}
           onToggleCollapse={handleToggleAgentList}
