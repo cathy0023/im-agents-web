@@ -52,6 +52,7 @@ const MessageInput = ({ className = '', placeholder }: MessageInputProps) => {
       }
     } catch (error) {
       console.error('发送消息失败:', error);
+      setError('消息发送失败');
     }
   };
 
@@ -90,20 +91,31 @@ const MessageInput = ({ className = '', placeholder }: MessageInputProps) => {
   const finalPlaceholder = placeholder || defaultPlaceholder;
 
   return (
-    <div className={`flex items-end space-x-4 ${className}`}>
-      <div className="flex-1 relative">
-        <Textarea
-          ref={textareaRef}
-          value={currentMessage}
-          onChange={handleInputChange}
-          onKeyDown={handleKeyDown}
-          placeholder={finalPlaceholder}
-          disabled={isLoading}
-          rows={3}
-          className="flex-1 resize-none border-0 bg-muted/20 rounded-2xl px-4 py-3 focus:ring-2 focus:ring-primary/20 focus:bg-background/80 transition-all duration-200 shadow-sm"
-          style={{ height: 'auto' }}
-        />
-      </div>
+    <div className="space-y-3">
+      {/* 错误信息显示 */}
+      {error && (
+        <div className="flex justify-end">
+          <span className="text-xs text-destructive">
+            {error}
+          </span>
+        </div>
+      )}
+      
+      {/* 消息输入区域 */}
+      <div className={`flex items-end space-x-4 ${className}`}>
+        <div className="flex-1 relative">
+          <Textarea
+            ref={textareaRef}
+            value={currentMessage}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
+            placeholder={finalPlaceholder}
+            disabled={isLoading}
+            rows={3}
+            className="flex-1 resize-none border-0 bg-muted/20 rounded-2xl px-4 py-3 focus:ring-2 focus:ring-primary/20 focus:bg-background/80 transition-all duration-200 shadow-sm"
+            style={{ height: 'auto' }}
+          />
+        </div>
       {isStreaming ? (
         <Button 
           onClick={handleStop}
@@ -151,6 +163,7 @@ const MessageInput = ({ className = '', placeholder }: MessageInputProps) => {
           )}
         </Button>
       )}
+      </div>
     </div>
   );
 };

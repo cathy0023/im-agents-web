@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { useChatStore, AGENT_CONFIGS } from '../store/chatStore';
 
 interface ChatAreaProps {
@@ -8,24 +8,32 @@ interface ChatAreaProps {
 const ChatArea = ({ selectedAgent = 1 }: ChatAreaProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
-  const { 
-    messages, 
-    setSelectedAgent,
-  } = useChatStore();
+  const { messages, setSelectedAgent } = useChatStore();
 
-  // 当selectedAgent变化时更新store
+  // 当selectedAgent变化时更新store - 使用 ref 防止无限循环
+  const prevSelectedAgentRef = useRef<number | undefined>(undefined);
   useEffect(() => {
-    setSelectedAgent(selectedAgent);
-  }, [selectedAgent, setSelectedAgent]);
+    if (prevSelectedAgentRef.current !== selectedAgent) {
+      setSelectedAgent(selectedAgent);
+      prevSelectedAgentRef.current = selectedAgent;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedAgent]); // 只依赖 selectedAgent，避免 setSelectedAgent 引用变化导致的无限循环
 
   // 自动滚动到底部
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // 过滤当前选中代理的消息
+  const filteredMessages = React.useMemo(() => {
+    return messages.filter(msg => msg.agentId === selectedAgent);
+  }, [messages, selectedAgent]);
+
+  // 当消息变化时自动滚动到底部
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [filteredMessages]);
 
   // 格式化时间
   const formatTime = (timestamp: number) => {
@@ -50,16 +58,11 @@ const ChatArea = ({ selectedAgent = 1 }: ChatAreaProps) => {
     return agentConfig?.name || 'AI助手';
   };
 
-  // 过滤当前agent的消息（只显示与当前agent相关的对话）
-  const currentMessages = messages.filter(msg => 
-    msg.agentId === selectedAgent
-  );
-
   // 检查是否有AI回复内容
-  const hasAiResponse = currentMessages.some(msg => 
+  const hasAiResponse = filteredMessages.some(msg => 
     msg.role === 'assistant' && msg.content.trim().length > 0
   );
-
+  
   // 当没有AI回复时显示欢迎信息
   const showWelcome = !hasAiResponse;
 
@@ -93,7 +96,7 @@ const ChatArea = ({ selectedAgent = 1 }: ChatAreaProps) => {
         )}
 
         {/* 聊天消息 */}
-        {currentMessages.map((message) => (
+        {filteredMessages.map((message) => (
           <div key={message.id} className={`flex ${message.role === 'assistant' ? 'justify-start' : 'justify-end'}`}>
             <div className={`max-w-[70%] ${message.role === 'assistant' ? 'mr-auto' : 'ml-auto'}`}>
               <div className={`p-4 rounded-2xl shadow-sm backdrop-blur-sm ${

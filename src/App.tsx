@@ -6,6 +6,7 @@ import MessageLayout from './components/layout/MessageLayout'
 import AnalysisLayout from './components/layout/AnalysisLayout'
 import ContactsList from './components/ContactsList'
 import ContactMessageLayout from './components/layout/ContactMessageLayout'
+import WebSocketTest from './components/WebSocketTest'
 import { getDefaultAgent } from './types/router'
 import { useThemeStore } from './store/themeStore'
 import { useUserStore } from './store/userStore'
@@ -50,6 +51,11 @@ function App() {
             
             {/* 通讯录模块路由 */}
             <Route path="/contacts" element={<ContactsList />} />
+            
+            {/* WebSocket 测试页面（仅开发环境） */}
+            {process.env.NODE_ENV === 'development' && (
+              <Route path="/debug/websocket-test" element={<WebSocketTest />} />
+            )}
             
             {/* 404路由：重定向到默认智能体 */}
             <Route path="*" element={<Navigate to={defaultAgent.route} replace />} />
