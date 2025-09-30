@@ -6,6 +6,7 @@ import ChatArea from '../ChatArea'
 import ChatInputArea from '../ChatInputArea'
 import ChartArea from '../ChartArea'
 import { useChatStore } from '@/store/chatStore'
+import { useAgentsStore } from '@/store/agentsStore'
 import type { DataEyesLayoutProps } from '@/types/dataEyes'
 
 const DataEyesLayout = ({
@@ -98,8 +99,17 @@ const DataEyesLayout = ({
     </div>
   ) : null
 
+  // 获取当前agent信息
+  const agents = useAgentsStore(state => state.agents)
+  const currentApiAgent = agents.find(agent => agent.uuid === agentId)
+  
   // 图表组件
-  const chartComponent = <ChartArea />
+  const chartComponent = (
+    <ChartArea 
+      agentKey={currentApiAgent?.agent_key} 
+      agentUuid={currentApiAgent?.uuid} 
+    />
+  )
 
   return (
     <div className={cn("flex-1 flex flex-col h-full relative", className)}>
@@ -111,8 +121,8 @@ const DataEyesLayout = ({
         splitRatio={0.5} // 1:1分割
       />
       
-      {/* 聊天气泡 - 仅在启用聊天且未激活时显示 */}
-      {chatEnabled && (
+      {/* 聊天气泡 - 暂时禁用 */}
+      {/* {chatEnabled && (
         <ChatBubble
           visible={bubbleVisible && !isChatActive}
           onClick={toggleChatMode}
@@ -122,7 +132,7 @@ const DataEyesLayout = ({
           pulse={true}
           isAgentListCollapsed={isAgentListCollapsed}
         />
-      )}
+      )} */}
 
     </div>
   )

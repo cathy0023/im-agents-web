@@ -206,9 +206,9 @@ export class AgentsService {
       
       console.log('AgentsService: 创建会话成功:', response);
       
-      // 验证响应数据结构
-      if (response && typeof response === 'object' && 'conversation_id' in response) {
-        return response;
+      // 放松验证 - 只要响应是对象就接受
+      if (response && typeof response === 'object') {
+        return response as CreateConversationResponse;
       }
       
       throw new Error('Invalid response format from create conversation API');

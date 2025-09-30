@@ -69,20 +69,7 @@ const AgentList = ({ selectedAgentKey, onAgentChange, isCollapsed = false, onTog
   // 创建会话的独立函数
   const createConversationForAgent = async (agentData: LocalAgent, forceCreate = false) => {
     console.log('AgentList: 准备创建会话，agentData:', agentData)
-
-    // 只有agent_type为conversation时才创建会话
-    console.log('AgentList: 检查agent_type:', agentData.apiAgent.agent_type)
-    
-    if (agentData.apiAgent.agent_type !== 'conversation') {
-      console.log('AgentList: agent_type不是conversation，跳过创建会话，agent_type:', agentData.apiAgent.agent_type)
-      // 如果切换到非conversation类型的agent，清除之前的会话状态
-      if (conversationCreatedFor !== null) {
-        setConversationId(null)
-        setConversationCreatedFor(null)
-        console.log('AgentList: 切换到非conversation类型agent，清除会话状态')
-      }
-      return
-    }
+    console.log('AgentList: agent_type:', agentData.apiAgent.agent_type)
 
     // 检查是否已经为这个agent创建过会话（除非强制创建）
     if (!forceCreate && conversationCreatedFor === agentData.agent_key) {
@@ -93,30 +80,63 @@ const AgentList = ({ selectedAgentKey, onAgentChange, isCollapsed = false, onTog
     try {
       console.log('AgentList: 创建会话，agent_key:', agentData.apiAgent.agent_key, 'agent_uuid:', agentData.apiAgent.uuid, 'agent_type:', agentData.apiAgent.agent_type)
       
-      // 设置加载历史消息状态
-      setLoadingHistory(true)
+      const agentType = agentData.apiAgent.agent_type
       
-      // 并行执行创建会话和获取历史消息
-      const [conversationResponse, historyResponse] = await Promise.allSettled([
-        agentsApi.createConversation(
-          agentData.apiAgent.agent_key,
-          agentData.apiAgent.uuid
-        ),
-        agentsApi.getAgentHistory(agentData.apiAgent.uuid)
-      ])
+      // 对于conversation类型，需要加载历史消息
+      const shouldLoadHistory = agentType === 'conversation'
       
-      // 用于标记是否需要创建AI占位符
+      if (shouldLoadHistory) {
+        // 设置加载历史消息状态
+        setLoadingHistory(true)
+      }
+      
+      // 并行执行创建会话和获取历史消息（如果需要）
+      const conversationPromise = agentsApi.createConversation(
+        agentData.apiAgent.agent_key,
+        agentData.apiAgent.uuid
+      )
+      
+      let conversationResponse: PromiseSettledResult<typeof conversationPromise extends Promise<infer T> ? T : never>
+      let historyResponse: PromiseSettledResult<Awaited<ReturnType<typeof agentsApi.getAgentHistory>>> | null = null
+      
+      if (shouldLoadHistory) {
+        const historyPromise = agentsApi.getAgentHistory(agentData.apiAgent.uuid)
+        const results = await Promise.allSettled([conversationPromise, historyPromise])
+        conversationResponse = results[0]
+        historyResponse = results[1]
+      } else {
+        const results = await Promise.allSettled([conversationPromise])
+        conversationResponse = results[0]
+      }
+      
+      // 用于标记是否需要创建AI占位符（仅conversation类型）
       let shouldCreateAIPlaceholder = false
       
       // 处理会话创建结果
       if (conversationResponse.status === 'fulfilled') {
-        // 保存conversation_id到store
-        setConversationId(conversationResponse.value.conversation_id)
-        setConversationCreatedFor(agentData.agent_key) // 标记已为此agent创建会话
-        console.log('AgentList: 会话创建成功，conversation_id:', conversationResponse.value.conversation_id, 'action:', conversationResponse.value.action, 'for agent:', agentData.agent_key)
+        const response = conversationResponse.value // 使用原始类型
         
-        // 检查 action 是否为 'create'，如果是则需要创建AI占位符
-        if (conversationResponse.value.action === 'create') {
+        // 对于list类型，响应格式可能不同
+        if (agentType === 'list') {
+          console.log('AgentList: list类型agent响应:', response)
+          // list类型可能没有conversation_id，只标记已创建
+          setConversationCreatedFor(agentData.agent_key)
+          
+          // 如果有conversations数据，打印出来
+          if ('conversations' in response && response.conversations) {
+            console.log('AgentList: list类型agent的conversations数据:', response.conversations)
+          }
+        } else {
+          // 非list类型，保存conversation_id到store
+          if (response.conversation_id) {
+            setConversationId(response.conversation_id)
+            setConversationCreatedFor(agentData.agent_key)
+            console.log('AgentList: 会话创建成功，conversation_id:', response.conversation_id, 'action:', response.action, 'for agent:', agentData.agent_key)
+          }
+        }
+        
+        // 检查 action 是否为 'create'，且仅对conversation类型创建AI占位符
+        if (agentType === 'conversation' && response.action === 'create') {
           shouldCreateAIPlaceholder = true
           console.log('AgentList: 检测到新会话创建（action=create），将在历史消息加载后创建AI占位符')
         }
@@ -125,26 +145,28 @@ const AgentList = ({ selectedAgentKey, onAgentChange, isCollapsed = false, onTog
         setChatError(conversationResponse.reason instanceof Error ? conversationResponse.reason.message : '创建会话失败')
       }
       
-      // 处理历史消息获取结果
-      if (historyResponse.status === 'fulfilled') {
-        console.log('AgentList: 获取历史消息成功，消息数量:', historyResponse.value.data.length)
-        // 将历史消息添加到聊天记录中 - 使用uuid作为agentId（此函数会自动设置 isLoadingHistory: false）
-        addHistoryMessages(historyResponse.value.data, agentData.apiAgent.uuid)
-        
-        // 如果需要创建AI占位符，在历史消息加载完成后创建
-        if (shouldCreateAIPlaceholder) {
-          console.log('AgentList: 历史消息加载完成，开始创建AI回复占位符')
-          createAIPlaceholder(agentData.apiAgent.uuid)
-        }
-      } else {
-        console.warn('AgentList: 获取历史消息失败:', historyResponse.reason)
-        // 历史消息获取失败，手动清除加载状态
-        setLoadingHistory(false)
-        
-        // 即使历史消息获取失败，如果需要创建AI占位符，仍然创建
-        if (shouldCreateAIPlaceholder) {
-          console.log('AgentList: 历史消息获取失败，但仍创建AI回复占位符')
-          createAIPlaceholder(agentData.apiAgent.uuid)
+      // 处理历史消息获取结果（仅conversation类型）
+      if (shouldLoadHistory && historyResponse) {
+        if (historyResponse.status === 'fulfilled') {
+          console.log('AgentList: 获取历史消息成功，消息数量:', historyResponse.value.data.length)
+          // 将历史消息添加到聊天记录中 - 使用uuid作为agentId（此函数会自动设置 isLoadingHistory: false）
+          addHistoryMessages(historyResponse.value.data, agentData.apiAgent.uuid)
+          
+          // 如果需要创建AI占位符，在历史消息加载完成后创建
+          if (shouldCreateAIPlaceholder) {
+            console.log('AgentList: 历史消息加载完成，开始创建AI回复占位符')
+            createAIPlaceholder(agentData.apiAgent.uuid)
+          }
+        } else {
+          console.warn('AgentList: 获取历史消息失败:', historyResponse.reason)
+          // 历史消息获取失败，手动清除加载状态
+          setLoadingHistory(false)
+          
+          // 即使历史消息获取失败，如果需要创建AI占位符，仍然创建
+          if (shouldCreateAIPlaceholder) {
+            console.log('AgentList: 历史消息获取失败，但仍创建AI回复占位符')
+            createAIPlaceholder(agentData.apiAgent.uuid)
+          }
         }
       }
       
