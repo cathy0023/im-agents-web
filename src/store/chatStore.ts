@@ -49,6 +49,7 @@ export interface ChatState {
   addHistoryMessages: (historyMessages: HistoryMessage[], agentId: string) => void;
   handleReceiveMessage: (wsMessage: ReceiveChatMessage) => void;
   setLoadingHistory: (loading: boolean) => void;
+  createAIPlaceholder: (agentId: string) => void;
   
   // DataEyes 专用操作
   toggleDataEyesChat: () => void;
@@ -417,6 +418,33 @@ export const useChatStore = create<ChatState>((set, get) => {
         error: null,
         isLoadingHistory: false // 加载完成
       });
+    },
+    
+    // 创建AI回复消息占位符（用于新会话）
+    createAIPlaceholder: (agentId: string) => {
+      const state = get();
+      
+      console.log('ChatStore: 创建AI回复消息占位符，agentId:', agentId);
+      
+      // 创建AI回复消息占位符
+      const aiMessageId = generateId();
+      const aiMessage: Message = {
+        id: aiMessageId,
+        content: '',
+        role: 'assistant',
+        timestamp: Date.now(),
+        isStreaming: true,
+        agentId: agentId,
+      };
+      
+      // 将AI占位符添加到消息列表的最后
+      set({
+        messages: [...state.messages, aiMessage],
+        isLoading: true,
+        isStreaming: true,
+      });
+      
+      console.log('ChatStore: AI回复消息占位符已创建:', aiMessage);
     },
     
     // DataEyes 专用操作方法
