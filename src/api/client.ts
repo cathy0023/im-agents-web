@@ -260,57 +260,6 @@ export class WebApiClient {
   }
 }
 
-// 智谱AI客户端类（保留原有功能）
-export class ZhipuApiClient {
-  private axiosInstance: AxiosInstance;
-  private config: ApiConfig;
-
-  constructor() {
-    this.config = {
-      baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
-      timeout: 30000,
-      apiKey: '596a400896fb4523a42fc3a6225c5808.iNBj9VvsNNrnMpK9'
-    };
-
-    this.axiosInstance = createAxiosInstance(this.config);
-  }
-
-  // 设置API Key
-  setApiKey(apiKey: string) {
-    this.config.apiKey = apiKey;
-    this.axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${apiKey}`;
-  }
-
-  // 通用请求方法
-  async request<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> {
-    try {
-      const response = await this.axiosInstance.request<T>({ url, ...config });
-      return response.data;
-    } catch (error) {
-      throw handleApiError(error);
-    }
-  }
-
-  // GET请求
-  async get<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> {
-    return this.request<T>(url, { ...config, method: 'GET' });
-  }
-
-  // POST请求
-  async post<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
-    return this.request<T>(url, { ...config, method: 'POST', data });
-  }
-
-  // PUT请求
-  async put<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
-    return this.request<T>(url, { ...config, method: 'PUT', data });
-  }
-
-  // DELETE请求
-  async delete<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> {
-    return this.request<T>(url, { ...config, method: 'DELETE' });
-  }
-}
 
 // Session Cookie 配置
 interface SessionCookieConfig {
@@ -424,13 +373,6 @@ export const SessionManager = {
 
 // 创建客户端实例
 export const webApiClient = new WebApiClient();
-export const zhipuApiClient = new ZhipuApiClient();
-
-// 获取环境变量中的API Key（如果有的话）
-const apiKey = import.meta.env.VITE_ZHIPU_API_KEY;
-if (apiKey) {
-  zhipuApiClient.setApiKey(apiKey);
-}
 
 // 导出类型声明，扩展axios类型
 declare module 'axios' {

@@ -90,16 +90,8 @@ export class WebSocketManager {
     this.setConnectionStatus('connecting')
     
     try {
-      // 构建连接 URL，添加 session 参数
-      let session = this.getSessionFromCookie()
-      
-      // 如果没有找到 session cookie，使用硬编码的测试 session
-      if (!session) {
-        session = 'Ny4xLjJpOXZFcWJzNlVGOUdHVXE1OGZiMmo='
-        this.log('未找到 session cookie，使用测试 session')
-      }
-      
-      const url = `${this.config.url}${session}`
+      // 直接使用配置的URL连接
+      const url = this.config.url
       this.log(`连接 WebSocket: ${url}`)
       
       this.ws = new WebSocket(url)
@@ -486,21 +478,6 @@ export class WebSocketManager {
     this.log(`连接状态变更: ${status}`)
   }
 
-  /**
-   * 获取 session cookie
-   */
-  private getSessionFromCookie(): string | null {
-    if (typeof document === 'undefined') return null
-    
-    const cookies = document.cookie.split(';')
-    for (const cookie of cookies) {
-      const [name, value] = cookie.trim().split('=')
-      if (name === 'session') {
-        return value
-      }
-    }
-    return null
-  }
 
   /**
    * 日志输出

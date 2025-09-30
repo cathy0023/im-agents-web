@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils'
 import MessageInput from './MessageInput'
 
 interface ChatInputAreaProps {
-  agentId?: number
+  agentId?: string
   className?: string
   placeholder?: string
 }

@@ -28,9 +28,34 @@ export interface WebSocketStoreState extends WebSocketState {
   _setError: (error: string | null) => void
 }
 
+// 获取WebSocket服务器地址
+const getWebSocketUrl = (): string => {
+  // 优先使用环境变量
+  const envWsUrl = import.meta.env.VITE_WS_URL
+  if (envWsUrl) {
+    return envWsUrl
+  }
+  
+  // 在开发环境中，如果本地服务器不可用，使用公共测试服务器
+  if (process.env.NODE_ENV === 'development') {
+    // 使用 WebSocket Echo 测试服务器
+    return 'wss://echo.websocket.org'
+  }
+  
+  // 根据当前协议和主机动态构建WebSocket URL
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+  const host = window.location.hostname
+  const port = window.location.hostname === 'localhost' ? '8001' : window.location.port
+  
+  // 使用固定的用户ID（后续可以从用户状态获取）
+  const userId = '97772489-34af-4179-83ca-00993b382605'
+  
+  return `${protocol}//${host}:${port}/api/v1/websocket/user/${userId}`
+}
+
 // 默认 WebSocket 配置
 const DEFAULT_WS_CONFIG: WebSocketConfig = {
-  url: 'ws://192.168.10.19:8001/api/v1/websocket/user/97772489-34af-4179-83ca-00993b382605',
+  url: getWebSocketUrl(),
   reconnectAttempts: 5,
   reconnectInterval: 3000,
   heartbeat: {
@@ -348,7 +373,11 @@ export const useChatMessages = (agentId?: number) => {
       (msg): msg is ChatWebSocketMessage => {
         if (msg.type !== 'chat_message') return false
         if (agentId === undefined) return true
-        return msg.data?.agentId === agentId
+        // 安全地访问data属性
+        if ('data' in msg && msg.data && typeof msg.data === 'object' && 'agentId' in msg.data) {
+          return msg.data.agentId === agentId
+        }
+        return false
       }
     )
   }, [messageHistory, agentId]) // 🔍 关键：只有当 messageHistory 或 agentId 真正变化时才重新计算

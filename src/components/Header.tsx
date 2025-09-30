@@ -1,6 +1,7 @@
 import { BarChart4, Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import ThemeToggle from './ThemeToggle'
+import WebSocketStatus from './WebSocketStatus'
 
 const Header = () => {
   return (
@@ -18,9 +19,9 @@ const Header = () => {
         </div>
       </div>
       
-      {/* 中间搜索区域 */}
+      {/* 中间区域 - WebSocket状态 */}
       <div className="flex-1 flex items-center justify-center max-w-md mx-8">
-        {/* 可以在这里添加搜索框 */}
+        <WebSocketStatus />
       </div>
       
       {/* 右侧操作按钮 */}

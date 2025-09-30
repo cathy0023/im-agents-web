@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { agentsApi } from '@/api';
 import type { Agent } from '@/api';
 
@@ -68,7 +68,7 @@ const DebugAgents = () => {
       )}
 
       <div className="space-y-4">
-        {agents.map((agent, index) => (
+        {agents.map((agent) => (
           <div key={agent.uuid} className="p-4 border border-border rounded-lg bg-card">
             <h3 className="text-lg font-semibold mb-2">{agent.agent_name}</h3>
             <div className="grid grid-cols-2 gap-2 text-sm mb-3">

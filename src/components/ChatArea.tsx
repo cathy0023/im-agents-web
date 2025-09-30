@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { useChatStore } from '../store/chatStore';
+import { useAgentsStore } from '../store/agentsStore';
 
 interface ChatAreaProps {
   selectedAgent?: string;
@@ -44,6 +45,9 @@ const ChatArea = ({ selectedAgent = '' }: ChatAreaProps) => {
     });
   };
 
+  // 获取 agents 数据
+  const { agents } = useAgentsStore();
+
   // 获取发送者名称
   const getSenderName = (role: string, agentId?: string) => {
     if (role === 'user') {
@@ -54,8 +58,9 @@ const ChatArea = ({ selectedAgent = '' }: ChatAreaProps) => {
       return 'AI助手';
     }
     
-    // 简化处理，直接返回 AI助手，因为现在使用 UUID 而不是数字 ID
-    return 'AI助手';
+    // 根据 agentId (UUID) 查找对应的 agent 名称
+    const agent = agents.find(a => a.uuid === agentId);
+    return agent ? agent.agent_name : 'AI助手';
   };
 
   // 检查是否有AI回复内容
@@ -74,15 +79,16 @@ const ChatArea = ({ selectedAgent = '' }: ChatAreaProps) => {
   return (
     <div className="h-full bg-background flex flex-col">
       {/* 对话消息列表 */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {/* 欢迎消息 */}
         {showWelcome && (
-          <div className="flex justify-start">
+          <div className="flex justify-start group">
             <div className="max-w-[70%] mr-auto">
-              <div className="p-4 rounded-2xl bg-muted/30 text-foreground shadow-sm backdrop-blur-sm">
+              <div className="py-2 px-3 rounded-2xl bg-muted/30 text-foreground shadow-sm backdrop-blur-sm">
                 <p className="text-sm whitespace-pre-wrap leading-relaxed">{getWelcomeMessage()}</p>
               </div>
-              <div className="flex items-center mt-2 space-x-2 px-1">
+              {/* 发送方和时间信息：预留空间，默认透明，hover时显示 */}
+              <div className="flex items-center mt-1.5 space-x-2 px-1 h-5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                 <span className="text-xs text-muted-foreground font-medium">
                   {getSenderName('assistant', selectedAgent)}
                 </span>
@@ -94,26 +100,22 @@ const ChatArea = ({ selectedAgent = '' }: ChatAreaProps) => {
 
         {/* 聊天消息 */}
         {filteredMessages.map((message) => {
-          // 系统消息（分割线）的特殊处理
+          // 系统消息（日期分隔符）的特殊处理
           if (message.role === 'system') {
             return (
-              <div key={message.id} className="flex justify-center my-8">
-                <div className="flex items-center w-full max-w-md">
-                  <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border to-border"></div>
-                  <span className="text-xs px-4 py-1.5 bg-background border border-border rounded-full text-muted-foreground font-medium whitespace-nowrap shadow-sm">
-                    {message.content}
-                  </span>
-                  <div className="flex-1 h-px bg-gradient-to-l from-transparent via-border to-border"></div>
-                </div>
+              <div key={message.id} className="flex justify-center my-6">
+                <span className="text-xs px-4 py-1.5 bg-background text-muted-foreground font-medium whitespace-nowrap">
+                  {message.content}
+                </span>
               </div>
             );
           }
 
           // 普通消息的处理
           return (
-            <div key={message.id} className={`flex ${message.role === 'assistant' ? 'justify-start' : 'justify-end'}`}>
+            <div key={message.id} className={`flex ${message.role === 'assistant' ? 'justify-start' : 'justify-end'} group`}>
               <div className={`max-w-[70%] ${message.role === 'assistant' ? 'mr-auto' : 'ml-auto'}`}>
-                <div className={`p-4 rounded-2xl shadow-sm backdrop-blur-sm ${
+                <div className={`py-2 px-3 rounded-2xl shadow-sm backdrop-blur-sm ${
                   message.role === 'assistant'
                     ? 'bg-muted/30 text-foreground' 
                     : 'bg-primary/90 text-primary-foreground'
@@ -126,7 +128,10 @@ const ChatArea = ({ selectedAgent = '' }: ChatAreaProps) => {
                     )}
                   </p>
                 </div>
-                <div className="flex items-center mt-2 space-x-2 px-1">
+                {/* 发送方和时间信息：预留空间，默认透明，hover时显示 */}
+                <div className={`flex items-center mt-1.5 px-1 h-5 transition-opacity duration-200 gap-1 ${
+                  message.isStreaming ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                } ${message.role === 'user' ? 'flex-row-reverse' : ''}`}>
                   <span className="text-xs text-muted-foreground font-medium">
                     {getSenderName(message.role, message.agentId)}
                   </span>

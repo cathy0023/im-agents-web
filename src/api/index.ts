@@ -1,9 +1,7 @@
 // 导出基础客户端
 export { 
   webApiClient, 
-  zhipuApiClient, 
-  WebApiClient, 
-  ZhipuApiClient,
+  WebApiClient,
   SessionManager 
 } from './client'
 

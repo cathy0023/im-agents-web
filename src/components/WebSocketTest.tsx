@@ -17,7 +17,21 @@ import { TEST_MESSAGES, runWebSocketTests, WebSocketLogTester } from '../utils/w
  * 使用增强日志功能的 WebSocketManager
  */
 export const WebSocketTest: React.FC = () => {
-  const [wsUrl, setWsUrl] = useState('ws://192.168.10.19:8001/api/v1/websocket/user/97772489-34af-4179-83ca-00993b382605')
+  // 使用动态URL，与store中的配置保持一致
+  const getDefaultWsUrl = () => {
+    // 在开发环境中使用测试服务器
+    if (process.env.NODE_ENV === 'development') {
+      return 'wss://echo.websocket.org'
+    }
+    
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+    const host = window.location.hostname
+    const port = window.location.hostname === 'localhost' ? '8001' : window.location.port
+    const userId = '97772489-34af-4179-83ca-00993b382605'
+    return `${protocol}//${host}:${port}/api/v1/websocket/user/${userId}`
+  }
+  
+  const [wsUrl, setWsUrl] = useState(getDefaultWsUrl())
   const [message, setMessage] = useState('')
   
   // 使用 WebSocket Store
@@ -38,12 +52,18 @@ export const WebSocketTest: React.FC = () => {
 
   // 监听 WebSocket 消息历史变化
   useEffect(() => {
-    const newMessages = messageHistory.map(msg => ({
-      id: msg.id,
-      content: `[${msg.type}] ${JSON.stringify(msg.data)}`,
-      timestamp: msg.timestamp,
-      type: 'received' as const
-    }))
+    const newMessages = messageHistory.map(msg => {
+      // 安全地获取data和timestamp
+      const data = 'data' in msg ? msg.data : (msg as any).message?.data
+      const timestamp = 'timestamp' in msg ? msg.timestamp : Date.now()
+      
+      return {
+        id: msg.id,
+        content: `[${msg.type}] ${JSON.stringify(data || msg)}`,
+        timestamp,
+        type: 'received' as const
+      }
+    })
     setLocalMessages(newMessages)
   }, [messageHistory])
 

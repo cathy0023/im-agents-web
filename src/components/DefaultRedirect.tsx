@@ -1,9 +1,9 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAgentsStore } from '@/store/agentsStore';
 
 const DefaultRedirect = () => {
-  const { agents, loading, hasLoaded, loadAgents, getDefaultAgent } = useAgentsStore();
+  const { loading, hasLoaded, loadAgents, getDefaultAgent } = useAgentsStore();
 
   useEffect(() => {
     // 如果还没有加载过，则加载agents

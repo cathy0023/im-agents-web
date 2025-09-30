@@ -84,6 +84,9 @@ export interface ComponentRenderMessage extends BaseWebSocketMessage {
   }
 }
 
+// 导入聊天WebSocket消息类型
+import type { SendChatMessage, ReceiveChatMessage } from './chat-websocket'
+
 // 联合消息类型
 export type WebSocketMessage = 
   | ChatWebSocketMessage
@@ -92,6 +95,8 @@ export type WebSocketMessage =
   | HeartbeatResponseMessage
   | ErrorWebSocketMessage
   | ComponentRenderMessage
+  | SendChatMessage
+  | ReceiveChatMessage
 
 // WebSocket 配置接口
 export interface WebSocketConfig {

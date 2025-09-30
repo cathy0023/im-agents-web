@@ -1,9 +1,9 @@
 import { create } from 'zustand';
-import { createZhipuChatStream } from '../lib/sse';
-import type { ChatMessage } from '../types/chat';
 import type { DataEyesConfig } from '../types/dataEyes';
-import type { ChatWebSocketMessage } from '../types/websocket';
+import type { ChatWebSocketMessage, WebSocketMessage } from '../types/websocket';
 import type { HistoryMessage } from '../types/conversation';
+import type { SendChatMessage, ReceiveChatMessage } from '../types/chat-websocket';
+import { useWebSocketStore } from './websocketStore';
 
 // 消息接口
 export interface Message {
@@ -23,12 +23,8 @@ export interface ChatState {
   isLoading: boolean;
   isStreaming: boolean;
   
-  // AI配置
-  apiKey: string;
-  selectedModel: string;
+  // Agent和会话管理
   selectedAgent: string;
-  
-  // 会话管理
   conversationId: string | null;
   
   // 错误处理
@@ -42,8 +38,6 @@ export interface ChatState {
   sendMessage: () => Promise<void>;
   stopStreaming: () => void;
   clearMessages: () => void;
-  setApiKey: (apiKey: string) => void;
-  setSelectedModel: (model: string) => void;
   setSelectedAgent: (agentId: string) => void;
   setConversationId: (conversationId: string | null) => void;
   setError: (error: string | null) => void;
@@ -52,6 +46,7 @@ export interface ChatState {
   clearAgentMessages: (agentId: string) => void;
   addWebSocketMessage: (wsMessage: ChatWebSocketMessage) => void;
   addHistoryMessages: (historyMessages: HistoryMessage[], agentId: string) => void;
+  handleReceiveMessage: (wsMessage: ReceiveChatMessage) => void;
   
   // DataEyes 专用操作
   toggleDataEyesChat: () => void;
@@ -59,48 +54,18 @@ export interface ChatState {
   setDataEyesLayoutMode: (mode: 'chart-only' | 'chat-active') => void;
 }
 
-// 可用模型
-export const AVAILABLE_MODELS = [
-  { id: 'glm-4', name: 'GLM-4', description: '智谱AI最新模型' },
-  { id: 'glm-4v', name: 'GLM-4V', description: '支持图像理解' },
-  { id: 'glm-3-turbo', name: 'GLM-3-Turbo', description: '快速响应版本' },
-];
-
-// Agent配置
-export const AGENT_CONFIGS = {
-  1: {
-    name: 'HR智能助手',
-    systemPrompt: '你是一个专业的HR智能助手，擅长处理人力资源相关问题，包括招聘、薪酬、培训、政策咨询等。请用专业、友好的语调回答用户问题。',
-  },
-  2: {
-    name: 'DataEyes',
-    systemPrompt: '你是DataEyes数据分析师，专门帮助用户分析各种业务数据，提供数据洞察和建议。请用专业、准确的方式分析数据并给出建议。',
-  },
-  3: {
-    name: '对话助手',
-    systemPrompt: '你是一个友好的对话助手，可以进行自然流畅的对话，帮助用户练习语言、讨论话题等。请保持自然、友善的对话风格。',
-  },
-  999: {
-    name: 'DataEyes分析师',
-    systemPrompt: '你是DataEyes数据分析专家，专注于深度数据分析和业务洞察。你可以帮助用户理解数据趋势、发现业务机会、制定数据驱动的决策。请用专业、准确的方式分析数据并给出建议。',
-  },
-};
 
 // 生成唯一ID
 const generateId = () => Date.now().toString(36) + Math.random().toString(36).substr(2);
 
 // 创建聊天store
 export const useChatStore = create<ChatState>((set, get) => {
-  let abortController: (() => void) | null = null;
-
   return {
     // 初始状态
     messages: [],
     currentMessage: '',
     isLoading: false,
     isStreaming: false,
-    apiKey: localStorage.getItem('zhipu_api_key') || '596a400896fb4523a42fc3a6225c5808.iNBj9VvsNNrnMpK9',
-    selectedModel: 'glm-4',
     selectedAgent: '',
     conversationId: null,
     error: null,
@@ -118,22 +83,35 @@ export const useChatStore = create<ChatState>((set, get) => {
       set({ currentMessage: message });
     },
 
-    // 发送消息
+    // 发送消息 - 使用WebSocket通信
     sendMessage: async () => {
       const state = get();
-      const { currentMessage, apiKey, selectedModel, selectedAgent } = state;
+      const { currentMessage, selectedAgent, conversationId } = state;
 
       if (!currentMessage.trim()) {
         set({ error: '请输入消息内容' });
         return;
       }
 
-      if (!apiKey) {
-        set({ error: '请先设置API Key' });
+      if (!selectedAgent) {
+        set({ error: '请选择一个Agent' });
         return;
       }
 
-      // 添加用户消息
+      if (!conversationId) {
+        set({ error: '会话ID不存在' });
+        return;
+      }
+
+      // 获取WebSocket Store
+      const wsStore = useWebSocketStore.getState();
+      
+      if (!wsStore.isConnected) {
+        set({ error: 'WebSocket未连接，请等待连接成功' });
+        return;
+      }
+
+      // 添加用户消息到UI
       const userMessage: Message = {
         id: generateId(),
         content: currentMessage.trim(),
@@ -143,8 +121,9 @@ export const useChatStore = create<ChatState>((set, get) => {
       };
 
       // 创建AI回复消息占位符
+      const aiMessageId = generateId();
       const aiMessage: Message = {
-        id: generateId(),
+        id: aiMessageId,
         content: '',
         role: 'assistant',
         timestamp: Date.now(),
@@ -161,77 +140,34 @@ export const useChatStore = create<ChatState>((set, get) => {
       });
 
       try {
-        // 准备聊天消息 - 使用默认配置，因为现在 selectedAgent 是 UUID
-        const agentConfig = AGENT_CONFIGS[1]; // 使用默认配置
-        const chatMessages: ChatMessage[] = [
-          {
-            role: 'system',
-            content: agentConfig.systemPrompt,
+        // 构建发送给后端的WebSocket消息
+        const wsMessage: SendChatMessage = {
+          type: 'chat_message',
+          message: {
+            data: {
+              content: currentMessage.trim()
+            }
           },
-          // 只发送最近的10条消息以节省token
-          ...state.messages
-            .filter(msg => msg.agentId === selectedAgent)
-            .slice(-10)
-            .map(msg => ({
-              role: msg.role as 'user' | 'assistant',
-              content: msg.content,
-            })),
-          {
-            role: 'user',
-            content: currentMessage.trim(),
-          },
-        ];
+          id: Date.now().toString(),
+          timestamp: Date.now(),
+          agent_uuid: selectedAgent,
+          conversation_uuid: conversationId
+        };
 
-        // 开始流式请求
-        abortController = await createZhipuChatStream(
-          {
-            model: selectedModel,
-            messages: chatMessages,
-            temperature: 0.7,
-            max_tokens: 2000,
-          },
-          apiKey,
-          // onChunk: 接收到新的内容块
-          (chunk: string) => {
-            const currentState = get();
-            const updatedMessages = currentState.messages.map(msg => 
-              msg.id === aiMessage.id 
-                ? { ...msg, content: msg.content + chunk }
-                : msg
-            );
-            set({ messages: updatedMessages });
-          },
-          // onError: 发生错误
-          (error: Error) => {
-            set({ 
-              error: error.message,
-              isLoading: false,
-              isStreaming: false,
-            });
-            // 移除失败的AI消息
-            const currentState = get();
-            const filteredMessages = currentState.messages.filter(msg => msg.id !== aiMessage.id);
-            set({ messages: filteredMessages });
-          },
-          // onComplete: 完成
-          () => {
-            const currentState = get();
-            const updatedMessages = currentState.messages.map(msg => 
-              msg.id === aiMessage.id 
-                ? { ...msg, isStreaming: false }
-                : msg
-            );
-            set({ 
-              messages: updatedMessages,
-              isLoading: false,
-              isStreaming: false,
-            });
-            abortController = null;
-          }
-        );
+        console.log('📤 [ChatStore] 发送WebSocket消息:', wsMessage);
+
+        // 发送WebSocket消息
+        const success = wsStore.sendMessage(wsMessage as WebSocketMessage);
+
+        if (!success) {
+          throw new Error('WebSocket消息发送失败');
+        }
+
+        // 消息已发送，等待WebSocket回复
+        console.log('✅ [ChatStore] 消息已发送，等待回复...');
 
       } catch (error) {
-        console.error('发送消息失败:', error);
+        console.error('❌ [ChatStore] 发送消息失败:', error);
         set({ 
           error: error instanceof Error ? error.message : '发送消息失败',
           isLoading: false,
@@ -240,34 +176,19 @@ export const useChatStore = create<ChatState>((set, get) => {
         
         // 移除失败的AI消息
         const currentState = get();
-        const filteredMessages = currentState.messages.filter(msg => msg.id !== aiMessage.id);
+        const filteredMessages = currentState.messages.filter(msg => msg.id !== aiMessageId);
         set({ messages: filteredMessages });
       }
     },
 
     // 停止流式输出
     stopStreaming: () => {
-      if (abortController) {
-        abortController();
-        abortController = null;
-      }
       set({ isLoading: false, isStreaming: false });
     },
 
     // 清空消息
     clearMessages: () => {
       set({ messages: [], error: null });
-    },
-
-    // 设置API Key
-    setApiKey: (apiKey: string) => {
-      localStorage.setItem('zhipu_api_key', apiKey);
-      set({ apiKey, error: null });
-    },
-
-    // 设置模型
-    setSelectedModel: (model: string) => {
-      set({ selectedModel: model });
     },
 
     // 设置Agent
@@ -340,6 +261,98 @@ export const useChatStore = create<ChatState>((set, get) => {
       });
     },
 
+    // 处理从WebSocket接收到的消息
+    handleReceiveMessage: (wsMessage: ReceiveChatMessage) => {
+      const state = get();
+      
+      console.group('📥 [ChatStore] handleReceiveMessage')
+      console.log('⏰ 时间:', new Date().toLocaleString())
+      console.log('📦 接收到的消息:', wsMessage)
+      console.log('📝 消息内容:', wsMessage.message?.data?.content)
+      console.log('🎯 消息状态:', wsMessage.status)
+      console.log('👤 当前 selectedAgent:', state.selectedAgent)
+      console.log('💬 当前 conversationId:', state.conversationId)
+      console.log('📚 当前所有消息数量:', state.messages.length)
+      
+      // 查找正在流式输出的AI消息
+      const streamingMessage = state.messages.find(
+        msg => msg.role === 'assistant' && msg.isStreaming && msg.agentId === state.selectedAgent
+      );
+      
+      console.log('🔍 查找流式消息占位符，条件:', {
+        role: 'assistant',
+        isStreaming: true,
+        agentId: state.selectedAgent
+      })
+      console.log('✅ 找到的流式消息:', streamingMessage)
+      
+      if (!streamingMessage) {
+        console.warn('⚠️ [ChatStore] 未找到对应的流式消息占位符');
+        console.log('📊 当前所有消息:', state.messages.map(m => ({
+          id: m.id,
+          role: m.role,
+          isStreaming: m.isStreaming,
+          agentId: m.agentId,
+          contentLength: m.content.length
+        })))
+        console.groupEnd()
+        return;
+      }
+      
+      const content = wsMessage.message?.data?.content || '';
+      console.log('📝 提取的内容:', content)
+      
+      // 根据消息状态处理
+      if (wsMessage.status === 'pending') {
+        // 流式输出中，追加内容
+        const updatedMessages = state.messages.map(msg => 
+          msg.id === streamingMessage.id
+            ? { ...msg, content: msg.content + content }
+            : msg
+        );
+        set({ messages: updatedMessages });
+        console.log('📝 [ChatStore] 追加消息内容:', content);
+        console.log('📊 更新后的消息总数:', updatedMessages.length)
+        console.groupEnd()
+        
+      } else if (wsMessage.status === 'finish') {
+        // 消息完成，停止流式输出
+        const updatedMessages = state.messages.map(msg => 
+          msg.id === streamingMessage.id
+            ? { 
+                ...msg, 
+                content: msg.content + content,
+                isStreaming: false 
+              }
+            : msg
+        );
+        set({ 
+          messages: updatedMessages,
+          isLoading: false,
+          isStreaming: false
+        });
+        console.log('✅ [ChatStore] 消息接收完成');
+        console.log('📊 最终消息:', updatedMessages.find(m => m.id === streamingMessage.id))
+        console.groupEnd()
+        
+      } else if (wsMessage.status === 'error') {
+        // 错误消息
+        set({ 
+          error: content || '消息接收失败',
+          isLoading: false,
+          isStreaming: false
+        });
+        // 移除失败的AI消息
+        const filteredMessages = state.messages.filter(msg => msg.id !== streamingMessage.id);
+        set({ messages: filteredMessages });
+        console.error('❌ [ChatStore] 消息接收错误:', content);
+        console.groupEnd()
+      } else {
+        console.warn('⚠️ [ChatStore] 未知的消息状态:', wsMessage.status)
+        console.groupEnd()
+      }
+    },
+    
     // 添加历史消息到聊天记录
     addHistoryMessages: (historyMessages: HistoryMessage[], agentId: string) => {
       const state = get();
@@ -350,8 +363,28 @@ export const useChatStore = create<ChatState>((set, get) => {
       // 按对话分组处理历史消息
       let currentConversation: HistoryMessage[] = [];
       
-      historyMessages.forEach((historyMsg, index) => {
+      historyMessages.forEach((historyMsg) => {
         if (historyMsg.type === 'begin') {
+          // 添加对话分割标记（除了第一个对话）
+          if (historyMessages.length > 0) {
+            const separatorMessage: Message = {
+              id: `separator-${historyMsg.conversation_uuid}-${historyMsg.timestamp}`,
+              content: new Date(historyMsg.timestamp * 1000).toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+              }).replace(/\//g, '-'),
+              role: 'system',
+              timestamp: historyMsg.timestamp * 1000,
+              agentId: agentId,
+              isStreaming: false
+            };
+            convertedMessages.push(separatorMessage);
+          }
+          
           // 开始新的对话
           currentConversation = [historyMsg];
         } else if (historyMsg.type === 'end') {
@@ -371,29 +404,6 @@ export const useChatStore = create<ChatState>((set, get) => {
             };
             convertedMessages.push(chatMessage);
           });
-          
-          // 添加对话分割标记（如果不是最后一个对话）
-          if (index < historyMessages.length - 1) {
-            const beginMessage = currentConversation.find(msg => msg.type === 'begin');
-            if (beginMessage) {
-              const separatorMessage: Message = {
-                id: `separator-${beginMessage.conversation_uuid}-${beginMessage.timestamp}`,
-                content: new Date(beginMessage.timestamp * 1000).toLocaleString('zh-CN', {
-                  year: 'numeric',
-                  month: '2-digit',
-                  day: '2-digit',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  hour12: false
-                }).replace(/\//g, '-'),
-                role: 'system',
-                timestamp: beginMessage.timestamp * 1000,
-                agentId: agentId,
-                isStreaming: false
-              };
-              convertedMessages.push(separatorMessage);
-            }
-          }
           
           currentConversation = [];
         } else if (historyMsg.type === 'message') {
