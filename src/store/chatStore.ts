@@ -297,19 +297,31 @@ export const useChatStore = create<ChatState>((set, get) => {
       const content = wsMessage.message?.data?.content || '';
       const status = wsMessage.message?.status;
       
+      console.log('准备处理消息，status:', status);
+      
       // 根据消息状态处理（非流式，直接设置完整内容）
       if (status === 'pending' || status === 'finish') {
+        console.log('进入 pending/finish 分支');
+        console.log('loadingMessage.id:', loadingMessage.id);
+        console.log('要设置的内容:', content);
+        
         // pending或finish状态都直接显示完整内容
         // 注意：后端一次性返回的消息状态可能是pending
-        const updatedMessages = state.messages.map(msg => 
-          msg.id === loadingMessage.id
-            ? { 
-                ...msg, 
-                content: content, // 直接设置完整内容，不追加
-                isStreaming: false 
-              }
-            : msg
-        );
+        const updatedMessages = state.messages.map(msg => {
+          if (msg.id === loadingMessage.id) {
+            console.log('找到匹配的消息，准备更新');
+            return { 
+              ...msg, 
+              content: content, // 直接设置完整内容，不追加
+              isStreaming: false 
+            };
+          }
+          return msg;
+        });
+        
+        console.log('更新后的消息数组长度:', updatedMessages.length);
+        console.log('更新后的AI消息:', updatedMessages.find(m => m.id === loadingMessage.id));
+        
         set({ 
           messages: updatedMessages,
           isLoading: false,
