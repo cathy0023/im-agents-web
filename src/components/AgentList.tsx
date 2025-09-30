@@ -18,7 +18,7 @@ interface AgentListProps {
 
 const AgentList = ({ selectedAgentKey, onAgentChange, isCollapsed = false, onToggleCollapse }: AgentListProps) => {
   const navigate = useNavigate()
-  const { setConversationId, setError: setChatError, addHistoryMessages } = useChatStore()
+  const { setConversationId, setError: setChatError, addHistoryMessages, setLoadingHistory } = useChatStore()
   const { agents: apiAgents, loading, error, hasLoaded, loadAgents } = useAgentsStore()
   
   // 本地显示用的agent数据结构
@@ -93,6 +93,9 @@ const AgentList = ({ selectedAgentKey, onAgentChange, isCollapsed = false, onTog
     try {
       console.log('AgentList: 创建会话，agent_key:', agentData.apiAgent.agent_key, 'agent_uuid:', agentData.apiAgent.uuid, 'agent_type:', agentData.apiAgent.agent_type)
       
+      // 设置加载历史消息状态
+      setLoadingHistory(true)
+      
       // 并行执行创建会话和获取历史消息
       const [conversationResponse, historyResponse] = await Promise.allSettled([
         agentsApi.createConversation(
@@ -116,16 +119,18 @@ const AgentList = ({ selectedAgentKey, onAgentChange, isCollapsed = false, onTog
       // 处理历史消息获取结果
       if (historyResponse.status === 'fulfilled') {
         console.log('AgentList: 获取历史消息成功，消息数量:', historyResponse.value.data.length)
-        // 将历史消息添加到聊天记录中 - 使用uuid作为agentId
+        // 将历史消息添加到聊天记录中 - 使用uuid作为agentId（此函数会自动设置 isLoadingHistory: false）
         addHistoryMessages(historyResponse.value.data, agentData.apiAgent.uuid)
       } else {
         console.warn('AgentList: 获取历史消息失败:', historyResponse.reason)
-        // 历史消息获取失败不影响会话创建，只记录警告
+        // 历史消息获取失败，手动清除加载状态
+        setLoadingHistory(false)
       }
       
     } catch (error) {
       console.error('AgentList: 创建会话或获取历史消息失败:', error)
       setChatError(error instanceof Error ? error.message : '创建会话失败')
+      setLoadingHistory(false) // 确保在异常时也清除加载状态
     }
   }
 

@@ -6,13 +6,11 @@ import MessageLayout from './components/layout/MessageLayout'
 import AnalysisLayout from './components/layout/AnalysisLayout'
 import ContactsList from './components/ContactsList'
 import ContactMessageLayout from './components/layout/ContactMessageLayout'
-import WebSocketTest from './components/WebSocketTest'
 import DebugAgents from './components/DebugAgents'
 import DefaultRedirect from './components/DefaultRedirect'
 import { useThemeStore } from './store/themeStore'
 import { useUserStore } from './store/userStore'
 import { useWebSocketActions } from './store/websocketStore'
-import { findBestWebSocketUrl } from './utils/websocket-connection-test'
 
 function App() {
   const { theme, setTheme } = useThemeStore()
@@ -30,28 +28,10 @@ function App() {
 
   // 初始化WebSocket连接
   useEffect(() => {
-    const initWebSocket = async () => {
-      console.log('🚀 [App] 开始初始化WebSocket连接')
-      
-      try {
-        // 自动检测最佳WebSocket URL
-        const bestUrl = await findBestWebSocketUrl()
-        
-        if (bestUrl) {
-          console.log('✅ [App] 找到可用的WebSocket连接，开始连接...')
-          connect({ url: bestUrl })
-        } else {
-          console.warn('⚠️ [App] 未找到可用的WebSocket连接，使用默认配置尝试连接')
-          connect()
-        }
-      } catch (error) {
-        console.error('❌ [App] WebSocket初始化失败:', error)
-        // 即使检测失败，也尝试使用默认配置连接
-        connect()
-      }
-    }
+    console.log('🚀 [App] 开始初始化WebSocket连接')
     
-    initWebSocket()
+    // 直接使用默认配置连接，避免预连接测试导致的状态混乱
+    connect()
     
     // 组件卸载时断开连接
     return () => {
@@ -89,7 +69,6 @@ function App() {
             {/* 调试页面（仅开发环境） */}
             {process.env.NODE_ENV === 'development' && (
               <>
-                <Route path="/debug/websocket-test" element={<WebSocketTest />} />
                 <Route path="/debug/agents" element={<DebugAgents />} />
               </>
             )}

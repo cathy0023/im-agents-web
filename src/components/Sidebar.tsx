@@ -1,4 +1,4 @@
-import { MessageCircle, BarChart3, Users, Bug } from 'lucide-react'
+import { MessageCircle, BarChart3, Users } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { getDefaultAgent } from '../types/router'
 
@@ -15,7 +15,6 @@ const Sidebar = ({ onTabChange }: SidebarProps) => {
   const isMessagesActive = location.pathname.startsWith('/messages')
   const isAnalysisActive = location.pathname.startsWith('/analysis')
   const isContactsActive = location.pathname.startsWith('/contacts')
-  const isDebugActive = location.pathname.startsWith('/debug')
 
   const handleTabChange = (tab: 'messages' | 'analysis' | 'contacts') => {
     console.log('Switching to tab:', tab)
@@ -84,26 +83,6 @@ const Sidebar = ({ onTabChange }: SidebarProps) => {
           <span className="text-[10px] font-medium mt-1">通讯录</span>
         </button>
       </div>
-
-      {/* 开发环境调试入口 */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="p-3 border-t border-border/50">
-          <button
-            onClick={() => navigate('/debug/websocket-test')}
-            className={`group relative w-full h-12 flex flex-col items-center justify-center rounded-xl transition-all duration-200 cursor-pointer ${
-              isDebugActive 
-                ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/25' 
-                : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
-            }`}
-            title="WebSocket 调试工具"
-          >
-            <Bug className={`h-4 w-4 transition-transform group-hover:scale-110 ${
-              isDebugActive ? 'scale-110' : ''
-            }`} />
-            <span className="text-[9px] font-medium mt-1">调试</span>
-          </button>
-        </div>
-      )}
     </div>
   )
 }

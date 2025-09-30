@@ -23,6 +23,7 @@ export interface WebSocketStoreState extends WebSocketState {
   clearMessageHistory: () => void
   clearError: () => void
   resetConnection: () => void
+  syncStatus: () => void
   
   // 内部方法
   _setError: (error: string | null) => void
@@ -36,19 +37,18 @@ const getWebSocketUrl = (): string => {
     return envWsUrl
   }
   
-  // 在开发环境中，如果本地服务器不可用，使用公共测试服务器
+  // 使用固定的用户ID（后续可以从用户状态获取）
+  const userId = '97772489-34af-4179-83ca-00993b382605'
+  
+  // 在开发环境中，直接使用指定的服务器地址
   if (process.env.NODE_ENV === 'development') {
-    // 使用 WebSocket Echo 测试服务器
-    return 'wss://echo.websocket.org'
+    return 'ws://192.168.10.19:8001/api/v1/websocket/user/' + userId
   }
   
   // 根据当前协议和主机动态构建WebSocket URL
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
   const host = window.location.hostname
   const port = window.location.hostname === 'localhost' ? '8001' : window.location.port
-  
-  // 使用固定的用户ID（后续可以从用户状态获取）
-  const userId = '97772489-34af-4179-83ca-00993b382605'
   
   return `${protocol}//${host}:${port}/api/v1/websocket/user/${userId}`
 }
@@ -88,7 +88,6 @@ export const useWebSocketStore = create<WebSocketStoreState>((set, get) => ({
     
     // 如果已经连接，直接返回
     if (state.isConnected && state.wsManager) {
-      console.log('WebSocket 已连接')
       return
     }
 
@@ -105,8 +104,6 @@ export const useWebSocketStore = create<WebSocketStoreState>((set, get) => ({
       // 设置事件回调
       wsManager.setCallbacks({
         onOpen: () => {
-          console.log('🎊 [Store] WebSocket 连接成功，更新状态')
-          // 直接使用 set 更新状态，避免通过 get() 调用方法
           set((state) => ({
             ...state,
             connectionStatus: 'connected',
@@ -117,12 +114,6 @@ export const useWebSocketStore = create<WebSocketStoreState>((set, get) => ({
         },
         
         onClose: (event) => {
-          console.log('📪 [Store] WebSocket 连接关闭，更新状态:', {
-            关闭码: event.code,
-            关闭原因: event.reason,
-            时间: new Date().toLocaleString()
-          })
-          // 直接使用 set 更新状态
           set((state) => ({
             ...state,
             connectionStatus: 'disconnected',
@@ -132,9 +123,7 @@ export const useWebSocketStore = create<WebSocketStoreState>((set, get) => ({
           }))
         },
         
-        onError: (error) => {
-          console.error('💥 [Store] WebSocket 连接错误，更新状态:', error)
-          // 直接使用 set 更新状态
+        onError: () => {
           set((state) => ({
             ...state,
             connectionStatus: 'error',
@@ -144,13 +133,10 @@ export const useWebSocketStore = create<WebSocketStoreState>((set, get) => ({
         },
         
         onMessage: (message) => {
-          console.group('📬 [Store] 收到 WebSocket 消息')
-          console.log('消息类型:', message.type)
-          console.log('消息内容:', message)
-          console.log('接收时间:', new Date().toLocaleString())
-          console.groupEnd()
+          console.log('📬 [Store] onMessage 回调被触发');
+          console.log('收到的消息:', message);
+          console.log('消息类型:', message.type);
           
-          // 直接使用 set 更新状态
           set((state) => {
             const newHistory = [...state.messageHistory, message]
             
@@ -160,7 +146,7 @@ export const useWebSocketStore = create<WebSocketStoreState>((set, get) => ({
               newHistory.splice(0, newHistory.length - maxHistorySize)
             }
             
-            console.log('📚 [Store] 消息历史已更新，当前数量:', newHistory.length)
+            console.log('更新 lastMessage 为:', message);
             
             return {
               ...state,
@@ -171,11 +157,6 @@ export const useWebSocketStore = create<WebSocketStoreState>((set, get) => ({
         },
         
         onReconnect: (attempt) => {
-          console.log('🔄 [Store] WebSocket 重连尝试，更新状态:', {
-            重连次数: attempt,
-            时间: new Date().toLocaleString()
-          })
-          // 直接使用 set 更新状态
           set((state) => ({
             ...state,
             connectionStatus: 'reconnecting',
@@ -185,8 +166,7 @@ export const useWebSocketStore = create<WebSocketStoreState>((set, get) => ({
         },
         
         onReconnectFailed: () => {
-          console.error('💀 [Store] WebSocket 重连失败，更新状态')
-          // 直接使用 set 更新状态
+          console.error('💀 [Store] WebSocket 重连失败')
           set((state) => ({
             ...state,
             connectionStatus: 'error',
@@ -199,8 +179,19 @@ export const useWebSocketStore = create<WebSocketStoreState>((set, get) => ({
       // 更新 store 状态
       set({ wsManager })
       
-      // 开始连接
-      wsManager.connect()
+      // 检查是否已经连接，如果是则立即更新状态
+      if (wsManager.isConnected()) {
+        set((state) => ({
+          ...state,
+          connectionStatus: 'connected',
+          isConnected: true,
+          lastConnectedAt: Date.now(),
+          error: null
+        }))
+      } else {
+        // 开始连接
+        wsManager.connect()
+      }
       
     } catch (error) {
       console.error('WebSocket 连接初始化失败:', error)
@@ -232,23 +223,13 @@ export const useWebSocketStore = create<WebSocketStoreState>((set, get) => ({
     const { wsManager, isConnected } = get()
     
     if (!wsManager || !isConnected) {
-      console.warn('⚠️ [Store] WebSocket 未连接，无法发送消息')
       get()._setError('WebSocket 未连接')
       return false
     }
 
-    console.group('📤 [Store] 准备发送消息')
-    console.log('消息类型:', typeof message === 'string' ? '纯文本' : message.type)
-    console.log('发送时间:', new Date().toLocaleString())
-    console.log('消息内容:', message)
-    console.groupEnd()
-
     const success = wsManager.send(message)
     if (!success) {
-      console.error('❌ [Store] 消息发送失败')
       get()._setError('消息发送失败')
-    } else {
-      console.log('✅ [Store] 消息发送成功')
     }
     
     return success
@@ -267,14 +248,6 @@ export const useWebSocketStore = create<WebSocketStoreState>((set, get) => ({
       }
     }
 
-    console.log('💬 [Store] 创建聊天消息:', {
-      消息ID: chatMessage.id,
-      角色: role,
-      代理ID: agentId,
-      内容长度: content.length,
-      时间: new Date().toLocaleString()
-    })
-
     return get().sendMessage(chatMessage)
   },
 
@@ -292,8 +265,23 @@ export const useWebSocketStore = create<WebSocketStoreState>((set, get) => ({
   resetConnection: () => {
     const { wsManager } = get()
     if (wsManager) {
-      console.log('🔄 [Store] 重置WebSocket连接')
       wsManager.forceReconnect()
+    }
+  },
+
+  // 同步状态（强制同步 WebSocket 管理器的状态到 store）
+  syncStatus: () => {
+    const { wsManager } = get()
+    if (wsManager) {
+      const isConnected = wsManager.isConnected()
+      const connectionStatus = wsManager.getConnectionStatus()
+      
+      set((state) => ({
+        ...state,
+        connectionStatus,
+        isConnected,
+        error: isConnected ? null : state.error
+      }))
     }
   },
 
@@ -351,6 +339,7 @@ export const useWebSocketActions = () => {
   const sendChatMessage = useWebSocketStore(state => state.sendChatMessage)
   const clearError = useWebSocketStore(state => state.clearError)
   const resetConnection = useWebSocketStore(state => state.resetConnection)
+  const syncStatus = useWebSocketStore(state => state.syncStatus)
   
   return {
     connect,
@@ -358,7 +347,8 @@ export const useWebSocketActions = () => {
     sendMessage,
     sendChatMessage,
     clearError,
-    resetConnection
+    resetConnection,
+    syncStatus
   }
 }
 

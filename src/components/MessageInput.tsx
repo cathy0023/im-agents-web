@@ -3,6 +3,7 @@ import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
 import { Send } from 'lucide-react';
 import { useChatStore } from '../store/chatStore';
+import { useWebSocketConnection } from '../store/websocketStore';
 
 interface MessageInputProps {
   className?: string;
@@ -11,6 +12,9 @@ interface MessageInputProps {
 
 const MessageInput = ({ className = '', placeholder }: MessageInputProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  
+  // 获取 WebSocket 连接状态（不需要在这里调用 useEnsureWebSocketConnected，MessageLayout 已经调用了）
+  const { isConnected, connectionStatus } = useWebSocketConnection();
   
   const {
     currentMessage,
@@ -90,13 +94,29 @@ const MessageInput = ({ className = '', placeholder }: MessageInputProps) => {
   const defaultPlaceholder = isStreaming ? "AI正在思考中..." : "输入消息...";
   const finalPlaceholder = placeholder || defaultPlaceholder;
 
+  // 获取连接状态提示
+  const getConnectionHint = () => {
+    if (connectionStatus === 'connecting') {
+      return { text: '正在连接...', color: 'text-amber-600' };
+    }
+    if (connectionStatus === 'reconnecting') {
+      return { text: '正在重连...', color: 'text-blue-600' };
+    }
+    if (!isConnected) {
+      return { text: 'WebSocket未连接，请稍候', color: 'text-destructive' };
+    }
+    return null;
+  };
+
+  const connectionHint = getConnectionHint();
+
   return (
     <div className="space-y-3">
-      {/* 错误信息显示 */}
-      {error && (
+      {/* 错误信息或连接状态显示 */}
+      {(error || connectionHint) && (
         <div className="flex justify-end">
-          <span className="text-xs text-destructive">
-            {error}
+          <span className={`text-xs ${connectionHint ? connectionHint.color : 'text-destructive'}`}>
+            {connectionHint ? connectionHint.text : error}
           </span>
         </div>
       )}
@@ -134,9 +154,10 @@ const MessageInput = ({ className = '', placeholder }: MessageInputProps) => {
       ) : (
         <Button 
           onClick={handleSend}
-          disabled={!currentMessage.trim() || isLoading}
+          disabled={!currentMessage.trim() || isLoading || !isConnected}
           size="icon" 
           className="h-12 w-12 rounded-2xl bg-primary hover:bg-primary/90 hover:scale-105 transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          title={!isConnected ? 'WebSocket未连接' : '发送消息'}
         >
           {isLoading ? (
             <svg 

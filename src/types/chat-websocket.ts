@@ -13,17 +13,21 @@ export interface ChatMessageData {
 }
 
 /**
+ * 发送消息的 message 内部结构
+ */
+export interface SendMessagePayload {
+  data: ChatMessageData           // 消息数据
+  id: string                      // 消息唯一ID，通过 Date.now().toString() 生成
+  agent_uuid: string              // Agent UUID，如 '550e8400-e29b-41d4-a716-446655440001'
+  conversation_uuid: string       // 会话UUID，如 'hdskdhjsadhaj'
+}
+
+/**
  * 发送消息的完整结构
  */
 export interface SendChatMessage {
   type: 'chat_message'            // 消息类型固定为 'chat_message'
-  message: {
-    data: ChatMessageData
-  }
-  id: string                      // 消息唯一ID，通过 Date.now().toString() 生成
-  timestamp: number               // 时间戳
-  agent_uuid: string              // Agent UUID，如 '550e8400-e29b-41d4-a716-446655440001'
-  conversation_uuid: string       // 会话UUID，如 'hdskdhjsadhaj'
+  message: SendMessagePayload     // 消息负载，包含 data、id、agent_uuid、conversation_uuid
 }
 
 // ==================== 接收消息 ====================
@@ -33,13 +37,21 @@ export interface SendChatMessage {
  */
 export interface AgentMessageData {
   content: string                 // 回复内容
+  sender_name?: string            // 发送者名称
+  timestamp?: number              // 时间戳
 }
 
 /**
- * Agent回复的消息结构
+ * Agent回复的消息结构（包含实际后端返回的所有字段）
  */
 export interface AgentMessage {
   data: AgentMessageData
+  id: string                      // 消息ID（在 message 内部）
+  status: 'finish' | 'error' | 'pending'  // 消息状态（在 message 内部）
+  component_name?: string         // 组件名称
+  conversation_uuid?: string      // 会话UUID
+  timestamp?: number              // 时间戳
+  type?: string                   // 消息类型（可能在 message 内部重复）
 }
 
 /**
@@ -47,11 +59,8 @@ export interface AgentMessage {
  */
 export interface ReceiveChatMessage {
   type: 'chat_message'            // 消息类型
-  message: AgentMessage           // Agent的消息
-  id: string                      // 消息唯一ID
-  chat_uuid: string               // 聊天UUID (后端使用的字段名)
-  status: 'finish' | 'error' | 'pending'  // 消息状态
-  component_name: string          // 组件名称，空字符串表示普通消息
+  message: AgentMessage           // Agent的消息（包含 status、id 等字段）
+  timestamp?: number              // 外层时间戳
 }
 
 // ==================== 消息状态 ====================

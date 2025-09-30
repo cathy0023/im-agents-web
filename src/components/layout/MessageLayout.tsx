@@ -6,6 +6,7 @@ import AgentList from '../AgentList'
 import FooterBar from '../FooterBar'
 import DataEyesLayout from './DataEyesLayout'
 import { useWebSocketChatIntegration } from '../../hooks/useWebSocketChatIntegration'
+import { useEnsureWebSocketConnected } from '../../hooks/useEnsureWebSocketConnected'
 import { useAgentsStore } from '@/store/agentsStore'
 
 const MessageLayout = () => {
@@ -15,6 +16,9 @@ const MessageLayout = () => {
   
   // 使用 agents store
   const { loading, hasLoaded, loadAgents, getAgentByKey } = useAgentsStore()
+  
+  // 确保 WebSocket 连接
+  useEnsureWebSocketConnected()
   
   // 启用WebSocket聊天集成
   useWebSocketChatIntegration()

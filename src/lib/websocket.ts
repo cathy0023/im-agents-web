@@ -87,7 +87,7 @@ export class WebSocketManager {
       this.ws = null
     }
 
-    this.setConnectionStatus('connecting')
+    // this.setConnectionStatus('connecting')
     
     try {
       // 直接使用配置的URL连接
@@ -100,7 +100,8 @@ export class WebSocketManager {
       this.log(`WebSocket 连接失败: ${error}`)
       this.setConnectionStatus('error')
       this.callbacks.onError?.(error as Event)
-      this.scheduleReconnect()
+      // 🚫 已禁用自动重连
+      console.warn('⚠️ [WebSocket] 连接失败，自动重连已禁用。请手动重连。')
     }
   }
 
@@ -132,22 +133,10 @@ export class WebSocketManager {
     try {
       const messageStr = typeof message === 'string' ? message : JSON.stringify(message)
       this.ws.send(messageStr)
-      
-      // 增强的发送日志
-      console.group('🚀 [WebSocket 发送消息]')
-      console.log('📤 发送时间:', new Date().toLocaleString())
-      console.log('📝 消息类型:', typeof message === 'string' ? '纯文本' : message.type)
-      console.log('📄 消息内容:', messageStr)
-      if (typeof message === 'object') {
-        console.log('🔍 消息详情:', message)
-      }
-      console.groupEnd()
-      
-      this.log(`发送消息: ${messageStr}`)
+      this.log(`发送消息: ${typeof message === 'object' ? message.type : '文本'}`)
       return true
     } catch (error) {
       console.error('❌ [WebSocket 发送失败]', error)
-      this.log(`发送消息失败: ${error}`)
       return false
     }
   }
@@ -161,9 +150,27 @@ export class WebSocketManager {
 
   /**
    * 检查是否已连接
+   * 优先使用内部状态，避免状态不一致
    */
   public isConnected(): boolean {
-    return this.connectionStatus === 'connected' && this.ws?.readyState === WebSocket.OPEN
+    // 如果没有 WebSocket 实例，肯定未连接
+    if (!this.ws) {
+      return false
+    }
+    
+    // 优先使用原生状态，这是最准确的
+    const wsIsOpen = this.ws.readyState === WebSocket.OPEN
+    
+    // 如果原生状态和内部状态不一致，记录警告并以原生状态为准
+    if (wsIsOpen && this.connectionStatus !== 'connected') {
+      console.warn('[WebSocket] 状态不一致：ws.readyState=OPEN 但 connectionStatus=', this.connectionStatus)
+      this.setConnectionStatus('connected')
+    } else if (!wsIsOpen && this.connectionStatus === 'connected') {
+      console.warn('[WebSocket] 状态不一致：ws.readyState=', this.ws.readyState, '但 connectionStatus=connected')
+      this.setConnectionStatus('disconnected')
+    }
+    
+    return wsIsOpen
   }
 
   /**
@@ -201,13 +208,7 @@ export class WebSocketManager {
     if (!this.ws) return
 
     this.ws.onopen = () => {
-      console.log('🎉 [WebSocket 连接成功]', {
-        时间: new Date().toLocaleString(),
-        URL: this.config.url,
-        状态: 'connected',
-        重连次数重置: this.reconnectAttempts
-      })
-      this.log('WebSocket 连接成功')
+      console.log('🎉 [WebSocket 连接成功]', this.config.url)
       this.setConnectionStatus('connected')
       this.reconnectAttempts = 0
       this.startHeartbeat()
@@ -215,31 +216,20 @@ export class WebSocketManager {
     }
 
     this.ws.onclose = (event) => {
-      console.log('🔌 [WebSocket 连接关闭]', {
-        时间: new Date().toLocaleString(),
-        关闭码: event.code,
-        关闭原因: event.reason || '无原因',
-        是否主动关闭: event.code === 1000,
-        是否会重连: event.code !== 1000 && !this.isDestroyed
-      })
-      this.log(`WebSocket 连接关闭: ${event.code} - ${event.reason}`)
+      console.log('🔌 [WebSocket 连接关闭]', `code: ${event.code}`, event.reason || '')
       this.setConnectionStatus('disconnected')
       this.stopHeartbeat()
       this.callbacks.onClose?.(event)
       
-      // 如果不是主动关闭且未销毁，则尝试重连
+      // 🚫 已禁用自动重连，需要手动重连
+      // 如果需要重连，请使用 resetConnection() 或 forceReconnect() 方法
       if (event.code !== 1000 && !this.isDestroyed) {
-        this.scheduleReconnect()
+        console.warn('⚠️ [WebSocket] 连接已断开，自动重连已禁用。请手动重连。')
       }
     }
 
     this.ws.onerror = (event) => {
-      console.error('❌ [WebSocket 连接错误]', {
-        时间: new Date().toLocaleString(),
-        错误事件: event,
-        当前状态: this.connectionStatus
-      })
-      this.log(`WebSocket 连接错误: ${event}`)
+      console.error('❌ [WebSocket 连接错误]', event)
       this.setConnectionStatus('error')
       this.callbacks.onError?.(event)
     }
@@ -253,75 +243,38 @@ export class WebSocketManager {
    * 处理接收到的消息
    */
   private handleMessage(data: string): void {
-    // 增强的接收日志
-    console.group('📥 [WebSocket 接收消息]')
-    console.log('📨 接收时间:', new Date().toLocaleString())
-    console.log('📄 原始数据:', data)
-    
-    this.log(`接收原始消息: ${data}`)
-    
-    // 首先检查是否是 JSON 格式
-    let message: WebSocketMessage | null = null
-    
     try {
       // 尝试解析为 JSON
       const parsed = JSON.parse(data)
       
-      // 验证是否是有效的 WebSocket 消息格式
-      if (parsed && typeof parsed === 'object' && parsed.type && parsed.timestamp) {
-        message = parsed as WebSocketMessage
-        console.log('✅ JSON 解析成功')
-        console.log('📝 消息类型:', message.type)
-        console.log('🔍 消息详情:', message)
-        this.log(`解析 JSON 消息成功: ${message.type}`)
+      // 验证是否是有效的消息格式（只要有 type 字段就行，timestamp 可选）
+      if (parsed && typeof parsed === 'object' && parsed.type) {
+        // 如果没有 timestamp，自动添加
+        if (!parsed.timestamp) {
+          parsed.timestamp = Date.now()
+        }
+        
+        const message = parsed as WebSocketMessage
+        this.log(`接收消息: ${message.type}`)
+        
+        // 处理心跳响应
+        if (isHeartbeatResponseMessage(message)) {
+          this.handleHeartbeatResponse()
+          return
+        }
+        
+        // 调用消息回调
+        this.callbacks.onMessage?.(message)
       } else {
-        throw new Error('不是有效的 WebSocket 消息格式')
+        this.log(`收到非标准格式消息，已忽略: ${JSON.stringify(parsed)}`)
       }
     } catch {
-      // JSON 解析失败，处理为纯文本消息
-      console.log('⚠️ JSON 解析失败，处理为纯文本')
-      this.log(`处理为纯文本消息: ${data}`)
-      
-      // 检查是否是心跳响应
+      // JSON 解析失败，检查是否是心跳响应
       if (data.toLowerCase().includes('pong') || data.toLowerCase().includes('ping')) {
-        console.log('💓 检测到心跳响应')
-        console.groupEnd()
         this.handleHeartbeatResponse()
-        return
+      } else {
+        this.log(`收到非 JSON 格式消息，已忽略: ${data}`)
       }
-      
-      // 创建系统消息
-      message = {
-        id: Date.now().toString(),
-        type: 'system_message',
-        timestamp: Date.now(),
-        data: {
-          content: data,
-          level: 'info'
-        }
-      } as WebSocketMessage
-      
-      console.log('📋 转换为系统消息:', message)
-    }
-    
-    console.groupEnd()
-    
-    if (message) {
-      // 处理心跳响应 - 检查是否是pong消息
-      if (isHeartbeatResponseMessage(message)) {
-        console.log('💓 [WebSocket 心跳响应] 收到pong消息', {
-          时间: new Date().toLocaleString(),
-          消息ID: message.id,
-          状态: message.status,
-          组件名: message.component_name,
-          时间戳: message.message.data.timestamp
-        })
-        this.handleHeartbeatResponse()
-        return
-      }
-      
-      // 调用消息回调
-      this.callbacks.onMessage?.(message)
     }
   }
 
@@ -374,24 +327,11 @@ export class WebSocketManager {
       }
     }
 
-    console.log('💓 [WebSocket 发送心跳]', {
-      时间: new Date().toLocaleString(),
-      消息ID: heartbeatMessage.id,
-      消息类型: heartbeatMessage.type,
-      内容: heartbeatMessage.message.data.content,
-      超时设置: `${this.config.heartbeat.timeout}ms`
-    })
-
     const success = this.send(heartbeatMessage)
     if (success) {
-      // 设置心跳超时定时器
+      // 设置心跳超时定时器（不会自动重连，只是关闭连接）
       this.heartbeatTimeoutTimer = setTimeout(() => {
-        console.warn('💔 [WebSocket 心跳超时]', {
-          时间: new Date().toLocaleString(),
-          超时时长: `${this.config.heartbeat!.timeout}ms`,
-          操作: '即将关闭连接'
-        })
-        this.log('心跳超时，连接可能已断开')
+        console.warn('💔 [WebSocket 心跳超时] - 连接将被关闭，不会自动重连')
         this.ws?.close(1001, '心跳超时')
       }, this.config.heartbeat!.timeout)
     }
@@ -401,14 +341,6 @@ export class WebSocketManager {
    * 处理心跳响应
    */
   private handleHeartbeatResponse(): void {
-    console.log('💚 [WebSocket 心跳响应]', {
-      时间: new Date().toLocaleString(),
-      状态: '连接正常',
-      操作: '清除超时定时器'
-    })
-    
-    this.log('收到心跳响应')
-    
     // 清除心跳超时定时器
     if (this.heartbeatTimeoutTimer) {
       clearTimeout(this.heartbeatTimeoutTimer)
@@ -417,45 +349,15 @@ export class WebSocketManager {
   }
 
   /**
-   * 安排重连
+   * 安排重连（已禁用自动调用）
+   * 此方法仅供内部使用，不会被自动调用
+   * 如需重连，请使用 forceReconnect() 或通过 UI 手动触发
    */
   private scheduleReconnect(): void {
-    if (this.isDestroyed || !this.config.reconnectAttempts) return
-    
-    if (this.reconnectAttempts >= this.config.reconnectAttempts) {
-      console.error('🚫 [WebSocket 重连失败]', {
-        时间: new Date().toLocaleString(),
-        重连次数: this.reconnectAttempts,
-        最大次数: this.config.reconnectAttempts,
-        状态: '停止重连'
-      })
-      this.log('重连次数已达上限，停止重连')
-      this.setConnectionStatus('error')
-      this.callbacks.onReconnectFailed?.()
-      return
-    }
-
-    this.reconnectAttempts++
-    this.setConnectionStatus('reconnecting')
-    
-    console.log('🔄 [WebSocket 安排重连]', {
-      时间: new Date().toLocaleString(),
-      当前重连次数: this.reconnectAttempts,
-      最大重连次数: this.config.reconnectAttempts,
-      重连间隔: `${this.config.reconnectInterval}ms`,
-      下次重连时间: new Date(Date.now() + (this.config.reconnectInterval || 3000)).toLocaleString()
-    })
-    
-    this.log(`${this.config.reconnectInterval}ms 后进行第 ${this.reconnectAttempts} 次重连`)
-    
-    this.reconnectTimer = setTimeout(() => {
-      console.log('⏰ [WebSocket 开始重连]', {
-        时间: new Date().toLocaleString(),
-        重连次数: this.reconnectAttempts
-      })
-      this.callbacks.onReconnect?.(this.reconnectAttempts)
-      this.connect()
-    }, this.config.reconnectInterval)
+    // 🚫 自动重连已禁用
+    console.warn('⚠️ [WebSocket] scheduleReconnect 已被禁用，请使用手动重连')
+    this.setConnectionStatus('error')
+    this.callbacks.onReconnectFailed?.()
   }
 
   /**
@@ -474,8 +376,25 @@ export class WebSocketManager {
    * 设置连接状态
    */
   private setConnectionStatus(status: WebSocketConnectionStatus): void {
+    const oldStatus = this.connectionStatus
     this.connectionStatus = status
-    this.log(`连接状态变更: ${status}`)
+    
+    // 记录状态变更
+    if (oldStatus !== status) {
+      this.log(`连接状态变更: ${oldStatus} → ${status}`)
+      
+      // 同时记录原生 WebSocket 状态
+      if (this.ws) {
+        const readyStateMap = {
+          0: 'CONNECTING',
+          1: 'OPEN',
+          2: 'CLOSING',
+          3: 'CLOSED'
+        }
+        const nativeState = readyStateMap[this.ws.readyState as keyof typeof readyStateMap] || 'UNKNOWN'
+        this.log(`  └─ 原生状态: ${nativeState} (${this.ws.readyState})`)
+      }
+    }
   }
 
 
