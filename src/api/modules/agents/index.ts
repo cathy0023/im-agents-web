@@ -18,6 +18,8 @@ export interface Agent {
   avatar: string;
   uuid: string;
   config: AgentConfig;
+  last_message_content?: string | null;
+  last_message_timestamp?: number | null;
 }
 
 // 获取Agents列表响应类型

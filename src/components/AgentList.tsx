@@ -36,20 +36,60 @@ const AgentList = ({ selectedAgentKey, onAgentChange, isCollapsed = false, onTog
   const [localAgents, setLocalAgents] = useState<LocalAgent[]>([])
   const [conversationCreatedFor, setConversationCreatedFor] = useState<string | null>(null) // 跟踪已创建会话的agent key
 
+  // 格式化时间戳显示
+  const formatTimestamp = (timestamp: number | null | undefined): string => {
+    if (!timestamp || timestamp <= 0) {
+      return ''; // 无效时间戳不显示
+    }
+
+    const messageDate = new Date(timestamp * 1000); // 转换为毫秒
+    const now = new Date();
+    
+    // 检查是否是今天
+    const isToday = messageDate.toDateString() === now.toDateString();
+    
+    if (isToday) {
+      // 今天显示时间 HH:mm
+      return messageDate.toLocaleTimeString('zh-CN', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+    } else {
+      // 非今天显示日期 MM月DD日
+      return messageDate.toLocaleDateString('zh-CN', {
+        month: '2-digit',
+        day: '2-digit'
+      }).replace('/', '月') + '日';
+    }
+  };
+
+  // 获取显示的消息内容
+  const getDisplayMessage = (apiAgent: Agent): string => {
+    // 优先显示最后消息内容
+    if (apiAgent.last_message_content && apiAgent.last_message_content.trim()) {
+      return apiAgent.last_message_content.trim();
+    }
+    // 如果最后消息内容无效，显示agent描述
+    return apiAgent.description;
+  };
+
   // 将API返回的Agent数据转换为本地显示格式
   const convertApiAgentToLocal = useCallback((apiAgent: Agent): LocalAgent => {
     console.log('AgentList: 转换API Agent到本地格式:', {
       agent_key: apiAgent.agent_key,
       agent_name: apiAgent.agent_name,
       agent_type: apiAgent.agent_type,
-      uuid: apiAgent.uuid
+      uuid: apiAgent.uuid,
+      last_message_content: apiAgent.last_message_content,
+      last_message_timestamp: apiAgent.last_message_timestamp
     });
     
     return {
       agent_key: apiAgent.agent_key,
       name: apiAgent.agent_name,
-      message: apiAgent.description,
-      time: '在线', // API没有返回时间信息，使用默认值
+      message: getDisplayMessage(apiAgent),
+      time: formatTimestamp(apiAgent.last_message_timestamp),
       avatar: apiAgent.agent_key.substring(0, 2).toUpperCase(),
       unreadCount: 0, // 默认无未读消息
       apiAgent: apiAgent // 保存完整的API数据
@@ -302,9 +342,11 @@ const AgentList = ({ selectedAgentKey, onAgentChange, isCollapsed = false, onTog
                         }`}>
                           {agent.name}
                         </h3>
-                        <span className="text-xs text-muted-foreground ml-2">
-                          {agent.time}
-                        </span>
+                        {agent.time && (
+                          <span className="text-xs text-muted-foreground ml-2 flex-shrink-0">
+                            {agent.time}
+                          </span>
+                        )}
                       </div>
                       <p className="text-sm text-muted-foreground truncate leading-tight">
                         {agent.message}
