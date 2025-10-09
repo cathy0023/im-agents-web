@@ -1,6 +1,6 @@
 # 项目开发规则
 
-> 基于 React + TypeScript + Vite + Tailwind CSS + shadcn UI + zustand + axios 的现代化Web应用开发规范
+> 基于 React + TypeScript + Vite + Tailwind CSS + shadcn UI + zustand + axios + react-i18next 的现代化Web应用开发规范
 
 ## 🎯 核心原则
 
@@ -9,7 +9,13 @@
 - **次优选择**: 基于 Radix UI 或 Headless UI 的自定义组件
 - **最后选择**: 完全自定义组件（仅在 shadcn 无法满足需求时）
 
-### 2. 技术栈一致性
+### 2. 国际化强制要求 ⭐ NEW
+- **所有新功能必须支持国际化**
+- **禁止硬编码任何用户可见文本**
+- **使用 `useI18n` Hook 进行翻译**
+- 详细规则参见 [PROJECT_I18N_RULES.md](mdc:PROJECT_I18N_RULES.md)
+
+### 3. 技术栈一致性
 - 严格使用项目已定义的技术栈
 - 新增依赖需要充分评估必要性
 - 保持版本兼容性
@@ -18,16 +24,26 @@
 
 ### shadcn UI 组件使用规则
 ```typescript
-// ✅ 正确：优先使用 shadcn 组件
+// ✅ 正确：优先使用 shadcn 组件 + 国际化
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { useI18n } from "@/hooks/useI18n"
+
+const MyComponent = () => {
+  const { t } = useI18n('common')
+  
+  return <Button variant="default">{t('save')}</Button>
+}
 
 // ❌ 错误：避免使用原生HTML元素代替shadcn组件
 <button className="bg-blue-500 hover:bg-blue-700">Click me</button>
 
-// ✅ 正确：使用shadcn Button组件
-<Button variant="default" size="default">Click me</Button>
+// ❌ 错误：硬编码文本
+<Button variant="default">保存</Button>
+
+// ✅ 正确：使用shadcn Button组件 + 翻译
+<Button variant="default">{t('save')}</Button>
 ```
 
 ### 组件创建规则
@@ -38,28 +54,35 @@ import { Input } from "@/components/ui/input"
 
 2. **如果 shadcn 没有所需组件，检查是否可以组合现有组件**
    ```typescript
-   // ✅ 组合使用现有组件
-   const CustomDialog = () => (
-     <Dialog>
-       <DialogTrigger asChild>
-         <Button variant="outline">打开弹窗</Button>
-       </DialogTrigger>
-       <DialogContent>
-         <DialogHeader>
-           <DialogTitle>标题</DialogTitle>
-         </DialogHeader>
-         <Card>
-           <CardContent>内容</CardContent>
-         </Card>
-       </DialogContent>
-     </Dialog>
-   )
+   // ✅ 组合使用现有组件 + 国际化
+   import { useI18n } from '@/hooks/useI18n'
+   
+   const CustomDialog = () => {
+     const { t } = useI18n('ui')
+     
+     return (
+       <Dialog>
+         <DialogTrigger asChild>
+           <Button variant="outline">{t('open_dialog')}</Button>
+         </DialogTrigger>
+         <DialogContent>
+           <DialogHeader>
+             <DialogTitle>{t('dialog_title')}</DialogTitle>
+           </DialogHeader>
+           <Card>
+             <CardContent>{t('dialog_content')}</CardContent>
+           </Card>
+         </DialogContent>
+       </Dialog>
+     )
+   }
    ```
 
 3. **仅在无法满足需求时创建自定义组件**
    - 必须使用 TypeScript
    - 必须使用 `forwardRef` 支持 ref 传递
    - 必须使用 Tailwind CSS 样式
+   - **必须支持国际化**
    - 必须遵循项目命名规范
 
 ### 组件文件结构
@@ -236,11 +259,14 @@ import { Card } from '@/components/ui/card'
 import ChatArea from './ChatArea'
 import MessageInput from './MessageInput'
 
-// 5. 工具函数和类型
+// 5. Hooks (包括 i18n)
+import { useI18n } from '@/hooks/useI18n'
+
+// 6. 工具函数和类型
 import { cn } from '@/lib/utils'
 import { Message } from '@/types/chat'
 
-// 6. Store
+// 7. Store
 import { useChatStore } from '@/store/chatStore'
 ```
 
@@ -290,15 +316,21 @@ const filteredMessages = useMemo(() =>
    - 禁止直接使用原生 HTML 元素代替 shadcn 组件
    - 禁止重复造轮子
 
-2. **不要违反TypeScript规范**
+2. **不要违反国际化规范 ⭐ CRITICAL**
+   - **禁止硬编码任何用户可见文本**
+   - **禁止使用条件语句判断语言显示不同文本**
+   - **禁止只添加中文翻译而忽略其他语言**
+   - **禁止不使用 `useI18n` Hook 直接显示文本**
+
+3. **不要违反TypeScript规范**
    - 禁止使用 `any` 类型
    - 禁止忽略 TypeScript 错误
 
-3. **不要混用样式方案**
+4. **不要混用样式方案**
    - 禁止使用内联样式
    - 禁止在同一项目中混用CSS-in-JS
 
-4. **不要破坏项目结构**
+5. **不要破坏项目结构**
    - 禁止随意创建新的目录结构
    - 禁止将文件放在错误的位置
 
@@ -308,12 +340,16 @@ const filteredMessages = useMemo(() =>
 - [ ] 确认需求是否可以用现有 shadcn 组件实现
 - [ ] 检查项目是否已有类似组件
 - [ ] 确认 API 接口设计
+- [ ] **确认需要哪些翻译文本和命名空间**
 
 ### 开发中检查
 - [ ] 组件是否使用了正确的 TypeScript 类型
 - [ ] 是否遵循了组件命名规范
 - [ ] 是否正确使用了 Tailwind CSS
 - [ ] 是否正确管理了组件状态
+- [ ] **是否导入了 `useI18n` Hook**
+- [ ] **是否所有用户可见文本都使用了翻译函数**
+- [ ] **是否在三种语言文件中都添加了翻译**
 
 ### 提交前检查
 - [ ] ESLint 检查通过
@@ -321,6 +357,8 @@ const filteredMessages = useMemo(() =>
 - [ ] 组件在不同屏幕尺寸下表现正常
 - [ ] 交互功能正常
 - [ ] 性能表现良好
+- [ ] **所有语言切换后文本显示正常**
+- [ ] **RTL 语言（阿拉伯文）布局正确**
 
 ## 🔧 常用命令
 
@@ -341,6 +379,15 @@ npm run lint
 npm run build
 ```
 
+## 📚 相关文档
+
+- [国际化开发规范](mdc:PROJECT_I18N_RULES.md) - 详细的 i18n 使用指南
+- [TypeScript 标准](mdc:.cursor/rules/typescript-standards.mdc) - TypeScript 开发标准
+- [组件开发规则](mdc:.cursor/rules/component-development.mdc) - 组件开发详细规则
+- [样式开发指南](mdc:.cursor/rules/styling-guidelines.mdc) - 样式开发规范
+
 ---
 
 遵循这些规则将确保项目代码的一致性、可维护性和高质量。当遇到规则中未涵盖的情况时，请参考现有代码模式或与团队讨论。
+
+**记住：国际化是强制要求，不是可选功能！**

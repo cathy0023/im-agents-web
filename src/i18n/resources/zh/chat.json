@@ -1,0 +1,24 @@
+{
+  "title": "聊天",
+  "new_chat": "新建聊天",
+  "chat_history": "聊天历史",
+  "send": "发送",
+  "input_placeholder": "输入消息...",
+  "empty_message": "请输入消息内容",
+  "sending": "发送中...",
+  "send_failed": "发送失败",
+  "retry": "重试",
+  "copy": "复制",
+  "copied": "已复制",
+  "delete_message": "删除消息",
+  "clear_chat": "清空聊天",
+  "clear_chat_confirm": "确定要清空所有聊天记录吗？",
+  "user": "用户",
+  "assistant": "助手",
+  "system": "系统",
+  "typing": "正在输入...",
+  "online": "在线",
+  "offline": "离线",
+  "reconnecting": "重新连接中..."
+}
+

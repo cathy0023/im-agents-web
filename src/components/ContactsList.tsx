@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Search, Users, UserPlus, Phone, Mail, MessageCircle, ChevronRight, ChevronDown, Building, Bot } from 'lucide-react'
 import type { Contact, Organization } from '@/types/contacts'
+import { useI18n } from '@/hooks/useI18n'
 
 // 组织架构数据
 const ORGANIZATION_DATA: Organization = {
@@ -115,6 +116,7 @@ const AI_ASSISTANTS: Contact[] = [
 
 const ContactsList = () => {
   const navigate = useNavigate()
+  const { t } = useI18n('ui')
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
   const [expandedDepartments, setExpandedDepartments] = useState<Set<string>>(new Set(['internal']))
@@ -170,11 +172,11 @@ const ContactsList = () => {
   // 获取部门标题
   const getDepartmentTitle = (deptId: string) => {
     switch (deptId) {
-      case 'all': return '全部联系人'
-      case 'internal': return '内部员工'
-      case 'product': return '产品部'
-      case 'external': return '外部员工'
-      default: return '联系人'
+      case 'all': return t('contacts.all_contacts')
+      case 'internal': return t('contacts.internal_employees')
+      case 'product': return t('contacts.product_department')
+      case 'external': return t('contacts.external_employees')
+      default: return t('contacts.title')
     }
   }
 
@@ -305,7 +307,7 @@ const ContactsList = () => {
           size="icon"
           className="h-6 w-6 text-muted-foreground hover:text-foreground"
           onClick={(e) => handleMessage(contact, e)}
-          title="发送消息"
+          title={t('contacts.send_message')}
         >
           <MessageCircle className="h-3 w-3" />
         </Button>
@@ -315,7 +317,7 @@ const ContactsList = () => {
             size="icon"
             className="h-6 w-6 text-muted-foreground hover:text-foreground"
             onClick={(e) => handleCall(contact, e)}
-            title="拨打电话"
+            title={t('contacts.make_call')}
           >
             <Phone className="h-3 w-3" />
           </Button>
@@ -326,7 +328,7 @@ const ContactsList = () => {
             size="icon"
             className="h-6 w-6 text-muted-foreground hover:text-foreground"
             onClick={(e) => handleEmail(contact, e)}
-            title="发送邮件"
+            title={t('contacts.send_email')}
           >
             <Mail className="h-3 w-3" />
           </Button>
@@ -343,9 +345,9 @@ const ContactsList = () => {
         <div className="p-4 border-b border-border">
           <h1 className="text-lg font-semibold text-foreground flex items-center gap-2">
             <Building className="h-5 w-5" />
-            赛优教育
+            {t('contacts.company_name')}
           </h1>
-          <p className="text-sm text-muted-foreground">{ORGANIZATION_DATA.company.description}</p>
+          <p className="text-sm text-muted-foreground">{t('contacts.company_description')}</p>
         </div>
 
         {/* 组织架构树 */}
@@ -360,7 +362,7 @@ const ContactsList = () => {
             >
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
-                <span className="font-medium">全部联系人</span>
+                <span className="font-medium">{t('contacts.all_contacts')}</span>
               </div>
               <Badge variant="secondary" className="text-xs">
                 {getAllContacts().length}
@@ -386,7 +388,7 @@ const ContactsList = () => {
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 )}
                 <Building className="h-4 w-4 text-green-600" />
-                <span className="font-medium">内部员工</span>
+                <span className="font-medium">{t('contacts.internal_employees')}</span>
               </div>
               <Badge variant="secondary" className="text-xs">
                 4
@@ -404,7 +406,7 @@ const ContactsList = () => {
                 >
                   <div className="flex items-center gap-2">
                     <Building className="h-4 w-4 text-green-600" />
-                    <span className="font-medium">产品部</span>
+                    <span className="font-medium">{t('contacts.product_department')}</span>
                   </div>
                   <Badge variant="secondary" className="text-xs">
                     4
@@ -424,7 +426,7 @@ const ContactsList = () => {
             >
               <div className="flex items-center gap-2">
                 <Bot className="h-4 w-4 text-blue-500" />
-                <span className="font-medium">外部员工</span>
+                <span className="font-medium">{t('contacts.external_employees')}</span>
               </div>
               <Badge variant="secondary" className="text-xs">
                 {AI_ASSISTANTS.length}
@@ -439,10 +441,10 @@ const ContactsList = () => {
         {/* 搜索头部 */}
         <div className="p-4 border-b border-border bg-card/30">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold text-foreground">通讯录</h2>
+            <h2 className="text-lg font-semibold text-foreground">{t('contacts.title')}</h2>
             <Button variant="outline" size="sm" className="gap-2">
               <UserPlus className="h-4 w-4" />
-              添加联系人
+              {t('contacts.add_contact')}
             </Button>
           </div>
           
@@ -450,7 +452,7 @@ const ContactsList = () => {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="搜索联系人..."
+              placeholder={t('contacts.search_placeholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 bg-background"
@@ -464,7 +466,7 @@ const ContactsList = () => {
             /* 搜索结果 */
             <div>
               <h3 className="text-sm font-medium text-muted-foreground mb-3">
-                搜索结果 ({filteredContacts.length})
+                {t('contacts.search_results')} ({filteredContacts.length})
               </h3>
               <div className="space-y-1">
                 {filteredContacts.map(contact => renderCompactContact(contact))}
@@ -472,7 +474,7 @@ const ContactsList = () => {
               {filteredContacts.length === 0 && (
                 <div className="text-center py-8">
                   <Search className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-muted-foreground">没有找到匹配的联系人</p>
+                  <p className="text-muted-foreground">{t('contacts.no_contacts_found')}</p>
                 </div>
               )}
             </div>
@@ -492,7 +494,7 @@ const ContactsList = () => {
               {filteredContacts.length === 0 && (
                 <div className="text-center py-8">
                   <Users className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-muted-foreground">该部门暂无人员</p>
+                  <p className="text-muted-foreground">{t('contacts.no_department_members')}</p>
                 </div>
               )}
             </div>

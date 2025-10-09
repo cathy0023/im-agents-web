@@ -1,0 +1,24 @@
+{
+  "title": "Chat",
+  "new_chat": "New Chat",
+  "chat_history": "Chat History",
+  "send": "Send",
+  "input_placeholder": "Type a message...",
+  "empty_message": "Please enter a message",
+  "sending": "Sending...",
+  "send_failed": "Send failed",
+  "retry": "Retry",
+  "copy": "Copy",
+  "copied": "Copied",
+  "delete_message": "Delete Message",
+  "clear_chat": "Clear Chat",
+  "clear_chat_confirm": "Are you sure you want to clear all chat history?",
+  "user": "User",
+  "assistant": "Assistant",
+  "system": "System",
+  "typing": "Typing...",
+  "online": "Online",
+  "offline": "Offline",
+  "reconnecting": "Reconnecting..."
+}
+

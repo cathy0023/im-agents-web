@@ -1,6 +1,7 @@
 import { BarChart4, Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import ThemeToggle from './ThemeToggle'
+import LanguageSwitcher from './LanguageSwitcher'
 // import WebSocketStatus from './WebSocketStatus'
 
 const Header = () => {
@@ -26,6 +27,7 @@ const Header = () => {
       
       {/* 右侧操作按钮 */}
       <div className="flex items-center space-x-2">
+        <LanguageSwitcher />
         <ThemeToggle />
         <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg">
           <Settings className="h-4 w-4" />

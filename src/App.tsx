@@ -11,11 +11,13 @@ import DefaultRedirect from './components/DefaultRedirect'
 import { useThemeStore } from './store/themeStore'
 import { useUserStore } from './store/userStore'
 import { useWebSocketActions } from './store/websocketStore'
+import { useI18nStore } from './store/i18nStore'
 
 function App() {
   const { theme, setTheme } = useThemeStore()
   const { initializeSession } = useUserStore()
   const { connect } = useWebSocketActions()
+  const { currentLanguage, changeLanguage } = useI18nStore()
 
   // 初始化主题和用户session
   useEffect(() => {
@@ -25,6 +27,13 @@ function App() {
     // 初始化用户session
     initializeSession()
   }, [theme, setTheme, initializeSession])
+
+  // 初始化国际化
+  useEffect(() => {
+    // 初始化语言设置（从 localStorage 恢复或使用默认值）
+    changeLanguage(currentLanguage)
+    console.log('🌍 [App] 初始化国际化，当前语言:', currentLanguage)
+  }, []) // 只在组件挂载时执行一次
 
   // 初始化WebSocket连接
   useEffect(() => {

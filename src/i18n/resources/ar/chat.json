@@ -1,0 +1,24 @@
+{
+  "title": "الدردشة",
+  "new_chat": "دردشة جديدة",
+  "chat_history": "سجل الدردشة",
+  "send": "إرسال",
+  "input_placeholder": "اكتب رسالة...",
+  "empty_message": "الرجاء إدخال رسالة",
+  "sending": "جاري الإرسال...",
+  "send_failed": "فشل الإرسال",
+  "retry": "إعادة المحاولة",
+  "copy": "نسخ",
+  "copied": "تم النسخ",
+  "delete_message": "حذف الرسالة",
+  "clear_chat": "مسح الدردشة",
+  "clear_chat_confirm": "هل أنت متأكد من رغبتك في مسح جميع سجلات الدردشة؟",
+  "user": "المستخدم",
+  "assistant": "المساعد",
+  "system": "النظام",
+  "typing": "يكتب...",
+  "online": "متصل",
+  "offline": "غير متصل",
+  "reconnecting": "إعادة الاتصال..."
+}
+

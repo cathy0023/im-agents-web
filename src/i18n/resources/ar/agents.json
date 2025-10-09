@@ -1,0 +1,17 @@
+{
+  "title": "الوكلاء",
+  "agent_list": "قائمة الوكلاء",
+  "select_agent": "اختر وكيل",
+  "agent_info": "معلومات الوكيل",
+  "agent_name": "اسم الوكيل",
+  "agent_description": "وصف الوكيل",
+  "agent_status": "الحالة",
+  "agent_type": "النوع",
+  "active": "نشط",
+  "inactive": "غير نشط",
+  "loading_agents": "جاري تحميل الوكلاء...",
+  "no_agents": "لا توجد وكلاء متاحة",
+  "agent_error": "فشل تحميل الوكلاء",
+  "default_agent": "الوكيل الافتراضي"
+}
+
