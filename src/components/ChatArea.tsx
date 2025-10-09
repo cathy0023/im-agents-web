@@ -96,32 +96,23 @@ const ChatArea = ({ selectedAgent = '' }: ChatAreaProps) => {
 
           // 普通消息的处理
           return (
-            <div key={message.id} className={`flex ${message.role === 'assistant' ? 'justify-start' : 'justify-end'} group`}>
+            <div key={message.id} className={`flex ${message.role === 'assistant' ? 'justify-start' : 'justify-end'} group animate-in fade-in-0 slide-in-from-bottom-2 duration-300`}>
               <div className={`max-w-[70%] ${message.role === 'assistant' ? 'mr-auto' : 'ml-auto'}`}>
-                <div className={`py-2 px-3 rounded-2xl shadow-sm backdrop-blur-sm ${
+                <div className={`py-2 px-3 rounded-2xl shadow-sm backdrop-blur-sm transition-all duration-200 ${
                   message.role === 'assistant'
                     ? 'bg-muted/30 text-foreground' 
                     : 'bg-primary/90 text-primary-foreground'
                 }`}>
-                  {/* 如果是loading状态（内容为空且isStreaming为true），显示loading占位符 */}
-                  {message.isStreaming && !message.content ? (
-                    <div className="flex items-center space-x-2 py-1">
-                      <svg className="animate-spin w-4 h-4 text-muted-foreground" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
-                      </svg>
-                      <span className="text-sm text-muted-foreground">正在思考中...</span>
-                    </div>
-                  ) : (
-                    <p className="text-sm whitespace-pre-wrap leading-relaxed">
-                      {message.content}
-                    </p>
-                  )}
+                  <div className="text-sm whitespace-pre-wrap leading-relaxed">
+                    {message.content.split('\n').map((line, index) => (
+                      <p key={index} className={index > 0 ? 'mt-1' : ''}>
+                        {line}
+                      </p>
+                    ))}
+                  </div>
                 </div>
                 {/* 发送方和时间信息：预留空间，默认透明，hover时显示 */}
-                <div className={`flex items-center mt-1.5 px-1 h-5 transition-opacity duration-200 gap-1 ${
-                  message.isStreaming ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                } ${message.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                <div className={`flex items-center mt-1.5 px-1 h-5 transition-opacity duration-200 gap-1 opacity-0 group-hover:opacity-100 ${message.role === 'user' ? 'flex-row-reverse' : ''}`}>
                   <span className="text-xs text-muted-foreground font-medium">
                     {getSenderName(message.role, message.agentId)}
                   </span>

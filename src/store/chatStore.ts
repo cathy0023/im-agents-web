@@ -23,6 +23,7 @@ export interface ChatState {
   isLoading: boolean;
   isStreaming: boolean;
   isLoadingHistory: boolean; // 历史消息加载状态
+  isAgentTyping: boolean; // AI助手是否正在输入
   
   // Agent和会话管理
   selectedAgent: string;
@@ -50,6 +51,7 @@ export interface ChatState {
   handleReceiveMessage: (wsMessage: ReceiveChatMessage) => void;
   setLoadingHistory: (loading: boolean) => void;
   createAIPlaceholder: (agentId: string) => void;
+  setAgentTyping: (typing: boolean) => void;
   
   // DataEyes 专用操作
   toggleDataEyesChat: () => void;
@@ -70,6 +72,7 @@ export const useChatStore = create<ChatState>((set, get) => {
     isLoading: false,
     isStreaming: false,
     isLoadingHistory: false,
+    isAgentTyping: false,
     selectedAgent: '',
     conversationId: null,
     error: null,
@@ -124,28 +127,16 @@ export const useChatStore = create<ChatState>((set, get) => {
         agentId: selectedAgent,
       };
 
-      // 创建AI回复消息占位符
-      const aiMessageId = generateId();
-      const aiMessage: Message = {
-        id: aiMessageId,
-        content: '',
-        role: 'assistant',
-        timestamp: Date.now(),
-        isStreaming: true,
-        agentId: selectedAgent,
-      };
-
       set({
-        messages: [...state.messages, userMessage, aiMessage],
+        messages: [...state.messages, userMessage],
         currentMessage: '',
         isLoading: true,
-        isStreaming: true,
+        isAgentTyping: true, // 设置AI正在输入状态
         error: null,
       });
 
       console.log('📤 [ChatStore] 准备发送消息');
       console.log('用户消息:', userMessage);
-      console.log('AI消息占位符:', aiMessage);
       console.log('selectedAgent:', selectedAgent);
       console.log('conversationId:', conversationId);
 
@@ -177,19 +168,19 @@ export const useChatStore = create<ChatState>((set, get) => {
         set({ 
           error: error instanceof Error ? error.message : '发送消息失败',
           isLoading: false,
-          isStreaming: false,
+          isAgentTyping: false,
         });
-        
-        // 移除失败的AI消息
-        const currentState = get();
-        const filteredMessages = currentState.messages.filter(msg => msg.id !== aiMessageId);
-        set({ messages: filteredMessages });
       }
     },
 
     // 停止流式输出
     stopStreaming: () => {
-      set({ isLoading: false, isStreaming: false });
+      set({ isLoading: false, isStreaming: false, isAgentTyping: false });
+    },
+
+    // 设置AI打字状态
+    setAgentTyping: (typing: boolean) => {
+      set({ isAgentTyping: typing });
     },
 
     // 清空消息
@@ -272,61 +263,36 @@ export const useChatStore = create<ChatState>((set, get) => {
       const state = get();
       
       console.log('📥 [ChatStore] 处理接收消息');
-      console.log('当前所有消息:', state.messages.map(m => ({
-        id: m.id,
-        role: m.role,
-        isStreaming: m.isStreaming,
-        agentId: m.agentId,
-        contentLength: m.content.length
-      })));
       console.log('当前 selectedAgent:', state.selectedAgent);
       console.log('消息内容:', wsMessage.message?.data?.content);
       console.log('消息状态:', wsMessage.message?.status);
-      
-      // 查找正在loading的AI消息占位符
-      const loadingMessage = state.messages.find(
-        msg => msg.role === 'assistant' && msg.isStreaming && msg.agentId === state.selectedAgent
-      );
-      
-      console.log('找到的loading消息:', loadingMessage);
-      
-      if (!loadingMessage) {
-        console.warn('⚠️ [ChatStore] 未找到loading消息占位符，无法更新');
-        return;
-      }
       
       const content = wsMessage.message?.data?.content || '';
       const status = wsMessage.message?.status;
       
       console.log('准备处理消息，status:', status);
       
-      // 根据消息状态处理（非流式，直接设置完整内容）
+      // 根据消息状态处理（非流式，直接添加完整消息）
       if (status === 'pending' || status === 'finish') {
         console.log('进入 pending/finish 分支');
-        console.log('loadingMessage.id:', loadingMessage.id);
-        console.log('要设置的内容:', content);
+        console.log('要添加的内容:', content);
         
-        // pending或finish状态都直接显示完整内容
-        // 注意：后端一次性返回的消息状态可能是pending
-        const updatedMessages = state.messages.map(msg => {
-          if (msg.id === loadingMessage.id) {
-            console.log('找到匹配的消息，准备更新');
-            return { 
-              ...msg, 
-              content: content, // 直接设置完整内容，不追加
-              isStreaming: false 
-            };
-          }
-          return msg;
-        });
+        // 创建新的AI消息
+        const aiMessage: Message = {
+          id: generateId(),
+          content: content,
+          role: 'assistant',
+          timestamp: Date.now(),
+          agentId: state.selectedAgent,
+          isStreaming: false
+        };
         
-        console.log('更新后的消息数组长度:', updatedMessages.length);
-        console.log('更新后的AI消息:', updatedMessages.find(m => m.id === loadingMessage.id));
+        console.log('创建的AI消息:', aiMessage);
         
         set({ 
-          messages: updatedMessages,
+          messages: [...state.messages, aiMessage],
           isLoading: false,
-          isStreaming: false
+          isAgentTyping: false // 关闭打字状态
         });
         console.log(`✅ [ChatStore] 消息接收完成 (${status})，内容长度:`, content.length);
         
@@ -336,11 +302,8 @@ export const useChatStore = create<ChatState>((set, get) => {
         set({ 
           error: content || '消息接收失败',
           isLoading: false,
-          isStreaming: false
+          isAgentTyping: false // 关闭打字状态
         });
-        // 移除失败的AI消息
-        const filteredMessages = state.messages.filter(msg => msg.id !== loadingMessage.id);
-        set({ messages: filteredMessages });
       }
     },
     

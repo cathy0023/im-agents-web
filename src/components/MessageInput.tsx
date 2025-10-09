@@ -4,6 +4,8 @@ import { Textarea } from './ui/textarea';
 import { Send } from 'lucide-react';
 import { useChatStore } from '../store/chatStore';
 import { useWebSocketConnection } from '../store/websocketStore';
+import { TypingStatus } from './ui/typing-status';
+import { useAgentsStore } from '../store/agentsStore';
 
 interface MessageInputProps {
   className?: string;
@@ -20,12 +22,28 @@ const MessageInput = ({ className = '', placeholder }: MessageInputProps) => {
     currentMessage,
     isLoading,
     isStreaming,
+    isAgentTyping,
+    selectedAgent,
     error,
     setCurrentMessage,
     sendMessage,
     stopStreaming,
     setError,
   } = useChatStore();
+
+  // 获取agents数据
+  const { agents } = useAgentsStore();
+
+  // 获取发送者名称
+  const getSenderName = (agentId?: string) => {
+    if (!agentId) {
+      return 'AI助手';
+    }
+    
+    // 根据 agentId (UUID) 查找对应的 agent 名称
+    const agent = agents.find(a => a.uuid === agentId);
+    return agent ? agent.agent_name : 'AI助手';
+  };
 
   // 自动调整textarea高度
   const adjustTextareaHeight = () => {
@@ -112,6 +130,12 @@ const MessageInput = ({ className = '', placeholder }: MessageInputProps) => {
 
   return (
     <div className="space-y-3">
+      {/* AI正在输入状态显示 */}
+      <TypingStatus 
+        isVisible={isAgentTyping && isConnected}
+        senderName={getSenderName(selectedAgent)}
+      />
+      
       {/* 错误信息或连接状态显示 */}
       {(error || connectionHint) && (
         <div className="flex justify-end">
