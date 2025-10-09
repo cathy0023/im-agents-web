@@ -4,20 +4,33 @@ globs: *.tsx,src/components/**/*.tsx
 
 # React 组件开发规则
 
-## 🌓 **CRITICAL: 主题模式优先原则**
+## 🌓 **CRITICAL: 主题模式 + 国际化双重优先原则**
 
-### ⚠️ 第一要务：所有新组件必须支持主题切换
-**创建任何组件前，必须确保使用 shadcn 语义化颜色！**
+### ⚠️ 第一要务：所有新组件必须支持主题切换 + 国际化
+**创建任何组件前，必须确保使用 shadcn 语义化颜色 + 国际化翻译！**
 
 ```typescript
-// ✅ 强制要求：使用语义化颜色
-<div className="bg-background text-foreground border-border">
-<Card className="bg-card text-card-foreground">
-<Button className="bg-primary text-primary-foreground">
+// ✅ 强制要求：使用语义化颜色 + 国际化
+import { useI18n } from '@/hooks/useI18n'
 
-// ❌ 严禁：硬编码颜色（会破坏主题切换）
+const MyComponent = () => {
+  const { t, isRTL, textDirection } = useI18n('ui')
+  
+  return (
+    <div dir={textDirection} className="bg-background text-foreground border-border">
+      <Card className="bg-card text-card-foreground">
+        <Button className="bg-primary text-primary-foreground">
+          {t('action_button')}
+        </Button>
+      </Card>
+    </div>
+  )
+}
+
+// ❌ 严禁：硬编码颜色 + 硬编码文本
 <div className="bg-white text-gray-900 border-gray-200">
-<div className="bg-gray-50 text-black">
+  <span>硬编码文本</span>
+</div>
 ```
 
 ### 🔍 组件创建前必须检查
@@ -25,16 +38,20 @@ globs: *.tsx,src/components/**/*.tsx
 - [ ] 是否使用了 `text-foreground` 而不是 `text-black` 或 `text-gray-900`？
 - [ ] 是否使用了 `border-border` 而不是 `border-gray-200`？
 - [ ] 是否避免了所有 `gray-*` 硬编码颜色？
+- [ ] **是否导入了 `useI18n` Hook？**
+- [ ] **是否所有用户可见文本都使用了翻译函数？**
+- [ ] **是否考虑了 RTL 布局（`isRTL`, `textDirection`）？**
 
 ## 🎨 **CRITICAL: shadcn UI 组件优先原则**
 
 ### ✅ 正确的组件开发流程
 1. **首先检查是否有现有的 shadcn 组件**
    ```typescript
-   // ✅ 优先使用现有的 shadcn 组件
+   // ✅ 优先使用现有的 shadcn 组件 + 国际化
    import { Button } from "@/components/ui/button"
    import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
    import { Input } from "@/components/ui/input"
+   import { useI18n } from "@/hooks/useI18n"
    ```
 
 2. **如果没有，使用 MCP 搜索和添加 shadcn 组件（优先方式）**
@@ -50,24 +67,30 @@ globs: *.tsx,src/components/**/*.tsx
    npx shadcn@latest add [component-name]
    ```
 
-4. **组合使用现有组件创建复杂UI**
+4. **组合使用现有组件创建复杂UI + 国际化**
    ```typescript
-   // ✅ 组合 shadcn 组件
-   const CustomDialog = () => (
-     <Dialog>
-       <DialogTrigger asChild>
-         <Button variant="outline">打开弹窗</Button>
-       </DialogTrigger>
-       <DialogContent>
-         <Card>
-           <CardHeader>
-             <CardTitle>标题</CardTitle>
-           </CardHeader>
-           <CardContent>内容</CardContent>
-         </Card>
-       </DialogContent>
-     </Dialog>
-   )
+   // ✅ 组合 shadcn 组件 + 国际化
+   import { useI18n } from '@/hooks/useI18n'
+   
+   const CustomDialog = () => {
+     const { t, isRTL, textDirection } = useI18n('ui')
+     
+     return (
+       <Dialog>
+         <DialogTrigger asChild>
+           <Button variant="outline">{t('open_dialog')}</Button>
+         </DialogTrigger>
+         <DialogContent dir={textDirection} className={isRTL ? 'rtl-layout' : 'ltr-layout'}>
+           <Card>
+             <CardHeader>
+               <CardTitle>{t('dialog_title')}</CardTitle>
+             </CardHeader>
+             <CardContent>{t('dialog_content')}</CardContent>
+           </Card>
+         </DialogContent>
+       </Dialog>
+     )
+   }
    ```
 
 ### ❌ 禁止的做法
@@ -77,6 +100,16 @@ globs: *.tsx,src/components/**/*.tsx
 
 // ❌ 禁止：不要重复创建已有的组件功能
 const CustomButton = () => <div className="button-styles">...</div>
+
+// ❌ 禁止：硬编码文本（违反国际化要求）
+<Button>保存</Button>
+<div>加载中...</div>
+
+// ❌ 禁止：忽略 RTL 布局
+<div className="flex items-center gap-2">
+  <Icon />
+  <span>文本</span>
+</div>
 ```
 
 ## 🎯 MCP shadcn 使用指南
@@ -111,7 +144,7 @@ const CustomButton = () => <div className="button-styles">...</div>
 
 ## 📋 组件开发模板
 
-### 标准组件结构
+### 标准组件结构（包含国际化）
 ```typescript
 import React, { forwardRef } from 'react'
 import { cn } from '@/lib/utils'
@@ -120,6 +153,9 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 
+// 国际化 Hook
+import { useI18n } from '@/hooks/useI18n'
+
 // 类型定义
 interface MyComponentProps {
   className?: string
@@ -127,15 +163,24 @@ interface MyComponentProps {
   // 其他props...
 }
 
-// 使用 forwardRef 支持 ref 传递
+// 使用 forwardRef 支持 ref 传递 + 国际化
 const MyComponent = forwardRef<HTMLDivElement, MyComponentProps>(
   ({ className, children, ...props }, ref) => {
+    const { t, isRTL, textDirection } = useI18n('ui')
+    
     return (
       <div
         ref={ref}
-        className={cn("base-styles", className)}
+        dir={textDirection}
+        className={cn(
+          "base-styles bg-background text-foreground",
+          isRTL && "rtl-layout",
+          className
+        )}
         {...props}
       >
+        <h1>{t('component_title')}</h1>
+        <Button>{t('action_button')}</Button>
         {children}
       </div>
     )

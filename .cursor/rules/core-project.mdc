@@ -5,7 +5,7 @@ alwaysApply: true
 # IM Agents Web 项目核心规则
 
 ## 🎯 项目技术栈
-这是一个基于 **React + TypeScript + Vite + Tailwind CSS + shadcn UI + zustand + axios** 的现代化 Web 应用。
+这是一个基于 **React + TypeScript + Vite + Tailwind CSS + shadcn UI + zustand + axios + react-i18next** 的现代化 Web 应用。
 
 ## 📦 项目结构
 - 主入口: [src/main.tsx](mdc:src/main.tsx)
@@ -22,11 +22,21 @@ src/
 ├── components/
 │   ├── ui/              # shadcn UI 组件 (最高优先级)
 │   ├── [业务组件].tsx   # 业务逻辑组件
+├── i18n/               # 国际化配置和翻译资源
+│   ├── index.ts        # i18n 配置入口
+│   ├── types.ts        # 国际化类型定义
+│   └── resources/      # 翻译资源文件
+│       ├── zh/         # 中文翻译
+│       ├── en/         # 英文翻译
+│       └── ar/         # 阿拉伯文翻译
+├── hooks/
+│   └── useI18n.ts      # 国际化自定义 Hook
 ├── lib/
 │   ├── utils.ts         # 工具函数
 │   ├── api.ts          # API 接口
 │   └── sse.ts          # Server-Sent Events
 ├── store/              # zustand 状态管理
+│   └── i18nStore.ts    # 国际化状态管理
 ├── types/              # TypeScript 类型定义
 └── assets/             # 静态资源
 ```
@@ -56,9 +66,27 @@ src/
 ## 📝 类型定义
 所有 TypeScript 类型定义集中在 [src/types/](mdc:src/types/) 目录下
 
+## 🌍 **CRITICAL: 国际化强制要求**
+**所有新功能必须支持国际化，这是项目的核心要求！**
+
+### 国际化开发原则
+- **必须使用 `useI18n` Hook 进行翻译**
+- **禁止硬编码任何用户可见文本**
+- **必须同时提供中文、英文、阿拉伯文三种语言**
+- **必须支持 RTL 布局（阿拉伯文）**
+- **所有组件必须考虑多语言适配**
+
+### 国际化技术栈
+- **核心库**: react-i18next + i18next
+- **状态管理**: zustand (i18nStore)
+- **浏览器检测**: i18next-browser-languagedetector
+- **自定义 Hook**: useI18n, useI18nMultiple
+
 ## ✅ 开发原则
 - 严格使用 TypeScript
 - 优先使用 shadcn UI 组件
 - 使用 Tailwind CSS 进行样式设计
 - 遵循组件化开发模式
 - 保持代码的类型安全
+- **强制支持国际化（i18n）**
+- **强制支持主题切换（浅色/深色模式）**

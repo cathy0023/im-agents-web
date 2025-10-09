@@ -47,8 +47,35 @@ const user = {} as User // 不安全的类型断言
 ### 集中类型管理
 参考项目结构 [src/types/](mdc:src/types/):
 - [src/types/chat.ts](mdc:src/types/chat.ts) - 聊天相关类型
+- [src/i18n/types.ts](mdc:src/i18n/types.ts) - 国际化相关类型
 - 将相关类型放在同一个文件中
 - 使用 `export` 导出所有类型
+
+### 国际化类型定义
+```typescript
+// ✅ 国际化相关类型
+export type Language = 'zh' | 'en' | 'ar'
+export type TranslationNamespace = 'common' | 'chat' | 'agents' | 'ui'
+
+export interface LanguageConfig {
+  code: Language
+  name: string
+  nativeName: string
+  dir: 'ltr' | 'rtl'
+  flag: string
+}
+
+// ✅ 国际化 Hook 返回类型
+interface UseI18nReturn {
+  t: (key: string, options?: any) => string
+  currentLanguage: Language
+  changeLanguage: (lang: Language) => Promise<void>
+  isRTL: boolean
+  textDirection: 'ltr' | 'rtl'
+  languageConfig: LanguageConfig
+  isLoading: boolean
+}
+```
 
 ### Interface vs Type
 ```typescript
@@ -91,14 +118,29 @@ type UserRoles = Record<string, 'admin' | 'user'>
 
 ## 🎨 React + TypeScript 最佳实践
 
-### 组件 Props 定义
+### 组件 Props 定义（包含国际化）
 ```typescript
-// ✅ 完整的 Props 接口
+// ✅ 完整的 Props 接口 + 国际化支持
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'outline'
   size?: 'sm' | 'md' | 'lg'
   isLoading?: boolean
   children: React.ReactNode
+  // 国际化相关
+  translationKey?: string
+  namespace?: TranslationNamespace
+}
+
+// ✅ 国际化组件 Props
+interface I18nComponentProps {
+  title: string
+  children?: React.ReactNode
+  className?: string
+  // 国际化支持
+  titleKey?: string
+  namespace?: TranslationNamespace
+  isRTL?: boolean
+  textDirection?: 'ltr' | 'rtl'
 }
 
 // ✅ 可选 children
