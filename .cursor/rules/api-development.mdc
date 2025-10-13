@@ -11,12 +11,40 @@ globs: src/lib/api.ts,src/lib/sse.ts,src/lib/**/*.ts
 - 所有 API 调用集中在 `src/lib/` 目录
 - 使用统一的错误处理
 - 实现类型安全的接口
+- **支持国际化错误消息和响应**
 
-### API 模块结构
+### 国际化 API 支持
 ```typescript
-// ✅ API 模块组织
+// ✅ API 响应支持国际化
+interface ApiResponse<T = any> {
+  data: T
+  success: boolean
+  message?: string
+  error?: string
+  // 国际化支持
+  messages?: {
+    zh?: string
+    en?: string
+    ar?: string
+  }
+}
+```
+
+### API 模块结构（包含国际化）
+```typescript
+// ✅ API 模块组织 + 国际化支持
+import { useI18nStore } from '@/store/i18nStore'
+
 export const chatApi = {
-  sendMessage: async (message: string, agentId: number) => {},
+  sendMessage: async (message: string, agentId: number) => {
+    const { currentLanguage } = useI18nStore.getState()
+    
+    return apiClient.post('/chat/send', {
+      message,
+      agentId,
+      language: currentLanguage // 传递当前语言
+    })
+  },
   getHistory: async (agentId: number) => {},
   clearHistory: async (agentId: number) => {}
 }
@@ -24,6 +52,16 @@ export const chatApi = {
 export const userApi = {
   getProfile: async () => {},
   updateProfile: async (data: UpdateProfileData) => {}
+}
+
+// ✅ 国际化 API
+export const i18nApi = {
+  getTranslations: async (namespace: string, language: string) => {
+    return apiClient.get(`/i18n/${namespace}/${language}`)
+  },
+  updateTranslation: async (key: string, translations: Record<string, string>) => {
+    return apiClient.put(`/i18n/${key}`, { translations })
+  }
 }
 ```
 

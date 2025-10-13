@@ -1,0 +1,17 @@
+{
+  "title": "智能体",
+  "agent_list": "智能体列表",
+  "select_agent": "选择智能体",
+  "agent_info": "智能体信息",
+  "agent_name": "智能体名称",
+  "agent_description": "智能体描述",
+  "agent_status": "状态",
+  "agent_type": "类型",
+  "active": "活跃",
+  "inactive": "未激活",
+  "loading_agents": "加载智能体中...",
+  "no_agents": "暂无智能体",
+  "agent_error": "加载智能体失败",
+  "default_agent": "默认智能体"
+}
+

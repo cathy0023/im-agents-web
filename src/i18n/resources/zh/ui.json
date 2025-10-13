@@ -1,0 +1,53 @@
+{
+  "header": {
+    "title": "IM Agents 平台",
+    "subtitle": "智能对话助手"
+  },
+  "sidebar": {
+    "messages": "消息",
+    "analysis": "分析",
+    "contacts": "通讯录",
+    "settings": "设置"
+  },
+  "footer": {
+    "copyright": "版权所有 © 2025",
+    "version": "版本"
+  },
+  "form": {
+    "required": "此字段为必填项",
+    "invalid_email": "邮箱格式不正确",
+    "invalid_phone": "手机号格式不正确",
+    "password_too_short": "密码长度至少6位",
+    "passwords_not_match": "两次输入的密码不一致"
+  },
+  "table": {
+    "no_data": "暂无数据",
+    "loading": "加载中...",
+    "total": "共 {{count}} 条",
+    "page": "第 {{current}} 页，共 {{total}} 页"
+  },
+  "notification": {
+    "success": "操作成功",
+    "error": "操作失败",
+    "warning": "警告",
+    "info": "提示"
+  },
+  "contacts": {
+    "title": "通讯录",
+    "add_contact": "添加联系人",
+    "search_placeholder": "搜索联系人...",
+    "all_contacts": "全部联系人",
+    "internal_employees": "内部员工",
+    "external_employees": "外部员工",
+    "product_department": "产品部",
+    "search_results": "搜索结果",
+    "no_contacts_found": "没有找到匹配的联系人",
+    "no_department_members": "该部门暂无人员",
+    "send_message": "发送消息",
+    "make_call": "拨打电话",
+    "send_email": "发送邮件",
+    "company_name": "赛优教育",
+    "company_description": "专注于优质教育服务的科技公司"
+  }
+}
+

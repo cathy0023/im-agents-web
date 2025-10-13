@@ -1,0 +1,17 @@
+{
+  "title": "Agents",
+  "agent_list": "Agent List",
+  "select_agent": "Select Agent",
+  "agent_info": "Agent Information",
+  "agent_name": "Agent Name",
+  "agent_description": "Agent Description",
+  "agent_status": "Status",
+  "agent_type": "Type",
+  "active": "Active",
+  "inactive": "Inactive",
+  "loading_agents": "Loading agents...",
+  "no_agents": "No agents available",
+  "agent_error": "Failed to load agents",
+  "default_agent": "Default Agent"
+}
+

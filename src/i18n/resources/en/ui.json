@@ -1,0 +1,53 @@
+{
+  "header": {
+    "title": "IM Agents Platform",
+    "subtitle": "Intelligent Chat Assistant"
+  },
+  "sidebar": {
+    "messages": "Messages",
+    "analysis": "Analysis",
+    "contacts": "Contacts",
+    "settings": "Settings"
+  },
+  "footer": {
+    "copyright": "Copyright © 2025",
+    "version": "Version"
+  },
+  "form": {
+    "required": "This field is required",
+    "invalid_email": "Invalid email format",
+    "invalid_phone": "Invalid phone number",
+    "password_too_short": "Password must be at least 6 characters",
+    "passwords_not_match": "Passwords do not match"
+  },
+  "table": {
+    "no_data": "No data available",
+    "loading": "Loading...",
+    "total": "Total {{count}} items",
+    "page": "Page {{current}} of {{total}}"
+  },
+  "notification": {
+    "success": "Success",
+    "error": "Error",
+    "warning": "Warning",
+    "info": "Info"
+  },
+  "contacts": {
+    "title": "Contacts",
+    "add_contact": "Add Contact",
+    "search_placeholder": "Search contacts...",
+    "all_contacts": "All Contacts",
+    "internal_employees": "Internal Employees",
+    "external_employees": "External Employees",
+    "product_department": "Product Department",
+    "search_results": "Search Results",
+    "no_contacts_found": "No matching contacts found",
+    "no_department_members": "No members in this department",
+    "send_message": "Send Message",
+    "make_call": "Make Call",
+    "send_email": "Send Email",
+    "company_name": "Saiyou Education",
+    "company_description": "A technology company focused on quality education services"
+  }
+}
+

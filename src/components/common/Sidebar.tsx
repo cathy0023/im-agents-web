@@ -1,6 +1,7 @@
 import { MessageCircle, BarChart3, Users } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { getDefaultAgent } from '@/types/router'
+import { useI18n } from '@/hooks/useI18n'
 
 interface SidebarProps {
   activeTab?: 'messages' | 'analysis' | 'contacts';
@@ -10,6 +11,7 @@ interface SidebarProps {
 const Sidebar = ({ onTabChange }: SidebarProps) => {
   const navigate = useNavigate()
   const location = useLocation()
+  const { t } = useI18n('ui')
 
   // 从当前路径判断活跃状态
   const isMessagesActive = location.pathname.startsWith('/messages')
@@ -52,7 +54,7 @@ const Sidebar = ({ onTabChange }: SidebarProps) => {
           <MessageCircle className={`h-5 w-5 transition-transform group-hover:scale-110 ${
             isMessagesActive ? 'scale-110' : ''
           }`} />
-          <span className="text-[10px] font-medium mt-1">消息</span>
+          <span className="text-[10px] font-medium mt-1">{t('sidebar.messages')}</span>
         </button>
         
         <button
@@ -66,7 +68,7 @@ const Sidebar = ({ onTabChange }: SidebarProps) => {
           <BarChart3 className={`h-5 w-5 transition-transform group-hover:scale-110 ${
             isAnalysisActive ? 'scale-110' : ''
           }`} />
-          <span className="text-[10px] font-medium mt-1">分析</span>
+          <span className="text-[10px] font-medium mt-1">{t('sidebar.analysis')}</span>
         </button>
 
         <button
@@ -80,7 +82,7 @@ const Sidebar = ({ onTabChange }: SidebarProps) => {
           <Users className={`h-5 w-5 transition-transform group-hover:scale-110 ${
             isContactsActive ? 'scale-110' : ''
           }`} />
-          <span className="text-[10px] font-medium mt-1">通讯录</span>
+          <span className="text-[10px] font-medium mt-1">{t('sidebar.contacts')}</span>
         </button>
       </div>
     </div>

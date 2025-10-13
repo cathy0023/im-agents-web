@@ -1,0 +1,53 @@
+{
+  "header": {
+    "title": "منصة وكلاء المراسلة",
+    "subtitle": "مساعد دردشة ذكي"
+  },
+  "sidebar": {
+    "messages": "الرسائل",
+    "analysis": "التحليل",
+    "contacts": "جهات الاتصال",
+    "settings": "الإعدادات"
+  },
+  "footer": {
+    "copyright": "حقوق النشر © 2025",
+    "version": "الإصدار"
+  },
+  "form": {
+    "required": "هذا الحقل مطلوب",
+    "invalid_email": "تنسيق البريد الإلكتروني غير صحيح",
+    "invalid_phone": "رقم الهاتف غير صحيح",
+    "password_too_short": "يجب أن تكون كلمة المرور 6 أحرف على الأقل",
+    "passwords_not_match": "كلمات المرور غير متطابقة"
+  },
+  "table": {
+    "no_data": "لا توجد بيانات",
+    "loading": "جاري التحميل...",
+    "total": "إجمالي {{count}} عنصر",
+    "page": "صفحة {{current}} من {{total}}"
+  },
+  "notification": {
+    "success": "نجح",
+    "error": "خطأ",
+    "warning": "تحذير",
+    "info": "معلومات"
+  },
+  "contacts": {
+    "title": "جهات الاتصال",
+    "add_contact": "إضافة جهة اتصال",
+    "search_placeholder": "البحث في جهات الاتصال...",
+    "all_contacts": "جميع جهات الاتصال",
+    "internal_employees": "الموظفون الداخليون",
+    "external_employees": "الموظفون الخارجيون",
+    "product_department": "قسم المنتجات",
+    "search_results": "نتائج البحث",
+    "no_contacts_found": "لم يتم العثور على جهات اتصال مطابقة",
+    "no_department_members": "لا يوجد أعضاء في هذا القسم",
+    "send_message": "إرسال رسالة",
+    "make_call": "إجراء مكالمة",
+    "send_email": "إرسال بريد إلكتروني",
+    "company_name": "ساييو التعليم",
+    "company_description": "شركة تقنية تركز على خدمات التعليم عالية الجودة"
+  }
+}
+

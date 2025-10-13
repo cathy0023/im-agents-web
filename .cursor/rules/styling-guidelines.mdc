@@ -4,11 +4,11 @@ globs: *.tsx,*.css,src/components/**/*
 
 # 样式开发指南
 
-## 🌓 主题模式支持规范 (CRITICAL - 最高优先级)
+## 🌓 主题模式 + 国际化双重支持规范 (CRITICAL - 最高优先级)
 
-### ⚠️ 强制要求：所有新组件必须支持暗黑/浅色模式
+### ⚠️ 强制要求：所有新组件必须支持暗黑/浅色模式 + 国际化
 
-**创建任何新组件时，必须首先考虑主题兼容性！**
+**创建任何新组件时，必须首先考虑主题兼容性 + 国际化支持！**
 
 ### 🚫 绝对禁止的做法
 ```typescript
@@ -24,15 +24,31 @@ globs: *.tsx,*.css,src/components/**/*
 <div className="bg-[#f5f5f5]">
 ```
 
-### ✅ 强制使用 shadcn 语义化颜色
+### ✅ 强制使用 shadcn 语义化颜色 + 国际化
 ```typescript
-// ✅ 正确：使用语义化颜色，自动支持主题切换
-<div className="bg-background text-foreground">
-<div className="bg-muted text-muted-foreground">
-<div className="bg-card text-card-foreground">
-<div className="bg-accent text-accent-foreground">
-<span className="text-destructive bg-destructive/10">
-<button className="hover:bg-accent">
+// ✅ 正确：使用语义化颜色 + 国际化，自动支持主题切换 + 多语言
+import { useI18n } from '@/hooks/useI18n'
+
+const MyComponent = () => {
+  const { t, isRTL, textDirection } = useI18n('ui')
+  
+  return (
+    <div dir={textDirection} className="bg-background text-foreground">
+      <div className="bg-muted text-muted-foreground">
+        <div className="bg-card text-card-foreground">
+          <div className="bg-accent text-accent-foreground">
+            <span className="text-destructive bg-destructive/10">
+              {t('error_message')}
+            </span>
+            <button className="hover:bg-accent">
+              {t('action_button')}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 ```
 
 ### 📋 完整语义化颜色映射表 (必须遵循)
@@ -59,74 +75,117 @@ globs: *.tsx,*.css,src/components/**/*
 - [ ] **所有文字颜色是否使用了 `text-foreground`、`text-muted-foreground` 等？**
 - [ ] **所有边框是否使用了 `border-border`？**
 - [ ] **是否避免了所有 `gray-*` 硬编码颜色？**
+- [ ] **是否导入了 `useI18n` Hook？**
+- [ ] **是否所有用户可见文本都使用了翻译函数？**
+- [ ] **是否考虑了 RTL 布局需求？**
 
 #### ✅ 开发中检查
 - [ ] **在浅色模式下测试组件显示效果**
 - [ ] **在深色模式下测试组件显示效果**
 - [ ] **切换主题时组件过渡是否正常？**
 - [ ] **所有交互状态（hover、focus、active）在两种模式下都正确显示？**
+- [ ] **在中文模式下测试文本显示**
+- [ ] **在英文模式下测试文本显示**
+- [ ] **在阿拉伯文模式下测试 RTL 布局**
 
 #### ✅ 提交前检查
 - [ ] **文字在两种模式下都有足够的对比度？**
 - [ ] **背景色在两种模式下都清晰可见？**
 - [ ] **边框在两种模式下都能区分内容区域？**
 - [ ] **状态颜色（错误、成功、警告）在两种模式下都准确传达信息？**
+- [ ] **三种语言下文本显示都正确？**
+- [ ] **RTL 布局在阿拉伯文下正确显示？**
+- [ ] **语言切换后功能完整性保持？**
 
-### 🎯 主题切换组件使用方式
+### 🎯 主题切换 + 国际化组件使用方式
 ```typescript
-// ✅ 在组件中正确使用主题状态
+// ✅ 在组件中正确使用主题状态 + 国际化
 import { useThemeStore } from '@/store/themeStore'
+import { useI18n } from '@/hooks/useI18n'
 
 const MyComponent = () => {
   const { theme, toggleTheme } = useThemeStore()
+  const { t, isRTL, textDirection } = useI18n('ui')
   
   return (
-    <div className="bg-background text-foreground border border-border">
-      {/* 所有子元素都使用语义化颜色 */}
-      <h1 className="text-foreground">标题</h1>
-      <p className="text-muted-foreground">描述文本</p>
+    <div dir={textDirection} className="bg-background text-foreground border border-border">
+      {/* 所有子元素都使用语义化颜色 + 国际化文本 */}
+      <h1 className="text-foreground">{t('page_title')}</h1>
+      <p className="text-muted-foreground">{t('description')}</p>
       <Button className="bg-primary text-primary-foreground">
-        操作按钮
+        {t('action_button')}
       </Button>
     </div>
   )
 }
 ```
 
-### 🎨 常用组件颜色模式
+### 🎨 常用组件颜色模式（包含国际化）
 
 #### 卡片组件
 ```typescript
-// ✅ 正确的卡片颜色
-<Card className="bg-card text-card-foreground border-border">
-  <CardHeader className="border-b border-border">
-    <CardTitle className="text-foreground">标题</CardTitle>
-  </CardHeader>
-  <CardContent className="text-muted-foreground">
-    内容
-  </CardContent>
-</Card>
+// ✅ 正确的卡片颜色 + 国际化
+import { useI18n } from '@/hooks/useI18n'
+
+const MyCard = () => {
+  const { t, isRTL, textDirection } = useI18n('ui')
+  
+  return (
+    <Card dir={textDirection} className="bg-card text-card-foreground border-border">
+      <CardHeader className="border-b border-border">
+        <CardTitle className="text-foreground">{t('card_title')}</CardTitle>
+      </CardHeader>
+      <CardContent className="text-muted-foreground">
+        {t('card_content')}
+      </CardContent>
+    </Card>
+  )
+}
 ```
 
 #### 表单组件
 ```typescript
-// ✅ 正确的表单颜色
-<div className="space-y-4">
-  <label className="text-foreground font-medium">标签</label>
-  <Input className="bg-background text-foreground border-border focus:border-primary" />
-  <p className="text-muted-foreground text-sm">帮助文本</p>
-</div>
+// ✅ 正确的表单颜色 + 国际化
+import { useI18n } from '@/hooks/useI18n'
+
+const MyForm = () => {
+  const { t, isRTL, textDirection } = useI18n('ui')
+  
+  return (
+    <div dir={textDirection} className="space-y-4">
+      <label className="text-foreground font-medium">{t('form_label')}</label>
+      <Input 
+        className="bg-background text-foreground border-border focus:border-primary" 
+        placeholder={t('form_placeholder')}
+      />
+      <p className="text-muted-foreground text-sm">{t('form_help')}</p>
+    </div>
+  )
+}
 ```
 
 #### 状态提示组件
 ```typescript
-// ✅ 正确的状态颜色
-<div className="bg-destructive/10 text-destructive border border-destructive/20 rounded p-3">
-  错误信息
-</div>
-<div className="bg-primary/10 text-primary border border-primary/20 rounded p-3">
-  成功信息
-</div>
+// ✅ 正确的状态颜色 + 国际化
+import { useI18n } from '@/hooks/useI18n'
+
+const StatusMessage = ({ type }: { type: 'error' | 'success' }) => {
+  const { t, isRTL, textDirection } = useI18n('ui')
+  
+  return (
+    <div 
+      dir={textDirection}
+      className={cn(
+        "border rounded p-3",
+        type === 'error' 
+          ? "bg-destructive/10 text-destructive border-destructive/20"
+          : "bg-primary/10 text-primary border-primary/20"
+      )}
+    >
+      {type === 'error' ? t('error_message') : t('success_message')}
+    </div>
+  )
+}
 ```
 
 ## 🎨 Tailwind CSS 使用规范
