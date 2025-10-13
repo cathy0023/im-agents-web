@@ -1,7 +1,7 @@
 import { BarChart4, Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import ThemeToggle from './ThemeToggle'
-// import WebSocketStatus from './WebSocketStatus'
+import { ThemeToggle } from '@/components/common'
+// import WebSocketStatus from '@/components/common'
 
 const Header = () => {
   return (

@@ -1,12 +1,11 @@
 import { useParams, Navigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import ChatArea from '../ChatArea'
-import SettingsPanel from '../SettingsPanel'
-import AgentList from '../AgentList'
-import FooterBar from '../FooterBar'
-import DataEyesLayout from './DataEyesLayout'
-import { useWebSocketChatIntegration } from '../../hooks/useWebSocketChatIntegration'
-import { useEnsureWebSocketConnected } from '../../hooks/useEnsureWebSocketConnected'
+import { ChatArea } from '@/components/chat'
+import { SettingsPanel, FooterBar } from '@/components/common'
+import { AgentList } from '@/components/agents'
+import { DataEyesLayout } from '@/components/layout'
+import { useWebSocketChatIntegration } from '@/hooks/useWebSocketChatIntegration'
+import { useEnsureWebSocketConnected } from '@/hooks/useEnsureWebSocketConnected'
 import { useAgentsStore } from '@/store/agentsStore'
 
 const MessageLayout = () => {

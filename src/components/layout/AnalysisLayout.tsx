@@ -1,4 +1,4 @@
-import DataEyesLayout from './DataEyesLayout'
+import { DataEyesLayout } from '@/components/layout'
 
 const AnalysisLayout = () => {
   // 分析模块直接使用 DataEyesLayout，不显示 AgentList

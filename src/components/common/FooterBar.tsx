@@ -1,6 +1,6 @@
 import { BarChart3, Brain, TrendingUp, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import MessageInput from './MessageInput'
+import { MessageInput } from '@/components/chat'
 
 interface FooterBarProps {
   mode?: 'hr' | 'dataEyes';

@@ -1,11 +1,10 @@
 import { useState } from 'react'
 import { PanelLeft, Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import ConversationList from '../ConversationList'
-import ContactChatArea from '../ContactChatArea'
-import SettingsPanel from '../SettingsPanel'
-// useChatStore import removed as not used
-import { useConversationStore } from '../../store/conversationStore'
+import { ConversationList } from '@/components/chat'
+import { ContactChatArea } from '@/components/contacts'
+import { SettingsPanel } from '@/components/common'
+import { useConversationStore } from '@/store/conversationStore'
 import type { Conversation } from '@/types/conversation'
 
 const ContactMessageLayout = () => {

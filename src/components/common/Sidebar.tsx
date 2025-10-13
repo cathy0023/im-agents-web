@@ -1,6 +1,6 @@
 import { MessageCircle, BarChart3, Users } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { getDefaultAgent } from '../types/router'
+import { getDefaultAgent } from '@/types/router'
 
 interface SidebarProps {
   activeTab?: 'messages' | 'analysis' | 'contacts';

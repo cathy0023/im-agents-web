@@ -1,7 +1,7 @@
 import React from 'react'
-import { Badge } from './ui/badge'
-import { Button } from './ui/button'
-import { useWebSocketConnection, useWebSocketActions } from '../store/websocketStore'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { useWebSocketConnection, useWebSocketActions } from '@/store/websocketStore'
 import { cn } from '@/lib/utils'
 
 interface WebSocketStatusProps {

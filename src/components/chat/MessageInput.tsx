@@ -1,11 +1,11 @@
 import React, { useRef, useEffect } from 'react';
-import { Button } from './ui/button';
-import { Textarea } from './ui/textarea';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import { Send } from 'lucide-react';
-import { useChatStore } from '../store/chatStore';
-import { useWebSocketConnection } from '../store/websocketStore';
-import { TypingStatus } from './ui/typing-status';
-import { useAgentsStore } from '../store/agentsStore';
+import { useChatStore } from '@/store/chatStore';
+import { useWebSocketConnection } from '@/store/websocketStore';
+import { TypingStatus } from '@/components/ui/typing-status';
+import { useAgentsStore } from '@/store/agentsStore';
 
 interface MessageInputProps {
   className?: string;

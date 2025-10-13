@@ -1,7 +1,7 @@
 import { Component } from 'react'
 import type { ErrorInfo, ReactNode } from 'react'
-import { Card, CardHeader, CardTitle, CardContent } from './ui/card'
-import { Button } from './ui/button'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 
 interface Props {
   children: ReactNode

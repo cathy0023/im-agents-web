@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
-import { useChatStore } from '../store/chatStore';
-import { useAgentsStore } from '../store/agentsStore';
+import { useChatStore } from '@/store/chatStore';
+import { useAgentsStore } from '@/store/agentsStore';
 
 interface ChatAreaProps {
   selectedAgent?: string;
